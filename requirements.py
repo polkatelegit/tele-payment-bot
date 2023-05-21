@@ -1,0 +1,7 @@
+aiogram
+requests
+aioschedule
+firebase_admin
+flask
+asyncio
+firebase

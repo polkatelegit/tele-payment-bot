@@ -101,10 +101,10 @@ async def add_product(message: Message):
     users[userID]['globe_state'] = ''
     users[userID]['state'] = ''
     users[userID]['temp_pid'] = ''
-    # if userID == str(ADMIN_ID):
-    users[userID]['globe_state'] = 'add_product'
-    users[userID]['state'] = 'waiting_for_product_name'
-    await message.reply("Please enter the product name")
+    if userID == str(ADMIN_ID):
+        users[userID]['globe_state'] = 'add_product'
+        users[userID]['state'] = 'waiting_for_product_name'
+        await message.reply("Please enter the product name")
 
 
 @dp.message_handler(content_types=[types.ContentType.TEXT, types.ContentType.PHOTO, types.ContentType.DOCUMENT])

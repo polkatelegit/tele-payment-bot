@@ -1,0 +1,14 @@
+{
+    "type": "service_account",
+    "project_id": "telepaymentdb",
+    "private_key_id": "177c0bb9b12fc8a99e0d53ff5bb0a0a57ec53337",
+    "private_key": "-----BEGIN PRIVATE KEY-----\nMIIEvgIBADANBgkqhkiG9w0BAQEFAASCBKgwggSkAgEAAoIBAQC9N2C74TBHif1I\nEGBscojQxv8ts6J4zQ96h+Xo26D7IB7oApM9wtoXRnZnjxqiC8pV4YfQ8l5nJs7Z\ncSB2Q7XygOJE2xXIHYUWKR9xXZdzu44kTUAIiiyQJ0UVuKWOWXRwEl9naF29JS4C\n8Fzwi3OdffTAcyu1D7ZAMdjcS7Dbc9QRg3CLmdLD5VoeaLIpYfGV7lTjj4ExGRf/\n1CeQjWjqC95U1d7ifqw07e6phJMzXhgeyPA0CWloCWf7vkU+FIOXZu2iv23CShGA\nTiFzNJf4T5UM7jfPn+BQ9h9Gw1WzB473ssU5dW9wpNZDRz41/rKXxl+njHwvWqNQ\neozVJrNRAgMBAAECggEADUasIJKWY7aaKsSNyp4nD/FrQlNW/eXZa63978T7oKy3\nLm01bcE7S/D50GtS7lxbnoOVlw+iZKQ6IdL7rACboAyMYIUEte1IT+7W63CqXNVW\n9FOzpfjxhoD5RAkxtVd82xSW7ndjeFvgkUk4vcUmRnGDfj6DQ9yt223QuvULaPvl\n8+zr6RIvD87qJz1o7eD6fMefzl8fHzDKiM9lopp4+AhJDz0nm/aaW2VKRcYP46JG\nBxM58qA/++kn1BajaSxn2Pi32DEUiYpwLgelc0Yfggx/D+dLMuQuxaomaKciYGAR\nr1Aqr9BqCVsqZPRi7peO+4g3De4FvGepACmknFvHlwKBgQDdWqNb18PyCQ3RsI6d\ndl3z28ieTx+ZYIxdJPcA4L6TUECx36CBwz8yrpPXkh5fJpLDV8KsNmmOUCfDIOLK\nKpjcuCKCVwLKre6aDHrK/ulbGCpu9ZttEK65v5Q4gs/9LdTCOIEhx+TRhV3NQPy7\nxNBZd/QQLJRfz3GqikWRXeOarwKBgQDa1QYGgZ/hB+qlw/8SUS5y9Dl3eC0U9u4H\nHB28C6rkwpq0lmZWHg+6h0SUfDLJOa9uHISiyZCiZI097LgRP0Ndkx1KmrDJyw3p\nz8XwOhKkUpo7yWrb8xd45OVYpNUp+McxMU8ckmaQfhBq27X9+b8wEl2VCQ73Zp5r\nitc20vYR/wKBgQCgjTB12j8+m8CROl2G6qbkzKJr6PoDdpr4qGocEedI1GnIWmqC\nFEsPiL6lGk+7NjA3Tb1eyaywU4Uzq/OzLUhot4oYPeJBffzVcX3TJSe/Mfz9NFoC\ntpn1EncAsikH+ykZooBPLzzRl8lcqelmjC+O5Ul6Pct03vMT/mzNLmt68wKBgEI0\nHk2Lm8XlsjySLjHpc4b9kgEtz12/UsW94NUKJppssYce1TkKgTGqSLovVOIB3KwQ\nXqQtHN+0UfLBEfLN0+CUaFEwuXljQANTg4uo1gj2oIij5/tA8QH3JdeKjp7TD9g3\nFbsMI5FlQixB6i47B3dQpxU2l1uLpTPd3jxM2HsbAoGBAKI3eAJ/mEMrMFtmQoji\nzp2/Gg9cGzhcL+9xWCC44ZzURPFgIV9i1Nn+1i0M4rdNLJlxoNYYM9yFdMSSVxqB\nhE+9uhlI2pvpx3+BXuljHDRLlyOEpTRoixE3i1l5b/og7noOsA4bUPqJmCofxT3p\nTNdNd56R+tajWsSrgMTMI18s\n-----END PRIVATE KEY-----\n",
+    "client_email": "firebase-adminsdk-b585x@telepaymentdb.iam.gserviceaccount.com",
+    "client_id": "109392008020445524942",
+    "auth_uri": "https://accounts.google.com/o/oauth2/auth",
+    "token_uri": "https://oauth2.googleapis.com/token",
+    "auth_provider_x509_cert_url": "https://www.googleapis.com/oauth2/v1/certs",
+    "client_x509_cert_url": "https://www.googleapis.com/robot/v1/metadata/x509/firebase-adminsdk-b585x%40telepaymentdb.iam.gserviceaccount.com",
+    "universe_domain": "googleapis.com"
+  }
+  
