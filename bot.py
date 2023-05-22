@@ -765,7 +765,23 @@ async def  hourly_checker():
     aioschedule.every().hour.do(check_status_of_pids)
     while True:
         await aioschedule.run_pending()
-        await asyncio.sleep(10)
+        await asyncio.sleep(100)
+
+
+# Webhook Hitter
+async def webhook_hitter():
+    webhook_url = ""
+    while True:
+        try:
+            response = requests.get(webhook_url)
+            if response.status_code ==200:
+                print("Website is alive ")
+            else:
+                print("Website returned a non-200 status code:",response.status_code)
+        except Exception as e:
+            print(f"Error in webhook : {e}")
+
+        await asyncio.sleep(250)
 
 
 async def main(_):
@@ -773,6 +789,7 @@ async def main(_):
     await read_db(products, 'products')
     await download_images()
     asyncio.create_task(hourly_checker())
+    asyncio.create_task(webhook_hitter())
 
     print("Bot is started..")
 
