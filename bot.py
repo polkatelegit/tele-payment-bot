@@ -15,7 +15,7 @@ import aioschedule
 
 
 API_TOKEN = '6013212854:AAE1OZF5u1503NmALVzANRjnsPGFDKx3Zx4'
-COINBASE_API = '986fda0a-2176-4eec-aa07-89f334e57397'
+COINBASE_API = '0c127e3d-75af-4631-b42e-63f3f01e0a12'
 
 bot = aiogram.Bot(API_TOKEN)
 dp = aiogram.Dispatcher(bot)
@@ -24,7 +24,7 @@ dp = aiogram.Dispatcher(bot)
 
 cred = credentials.Certificate('firebase_key.json')
 firebase_admin.initialize_app(
-    cred, {'storageBucket': 'tgstore-c03d1.appspot.com'})
+    cred, {'storageBucket': 'telepaymentdb.appspot.com'})
 
 bucket = storage.bucket()
 firebase_folder_path = "pictures/"

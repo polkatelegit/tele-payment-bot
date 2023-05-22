@@ -13,7 +13,7 @@ from firebase_admin import firestore
 
 app= Flask(__name__)
 global script_process, script_pid
-WEBHOOK_SECRET = "22d28160-42b1-4de9-8606-5376682f9ef5"
+WEBHOOK_SECRET = "6851492f-9db5-4cef-83b3-6f207d5e46d4"
 
 
 cred = credentials.Certificate('firebase_key.json')
