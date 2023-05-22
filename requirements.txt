@@ -5,3 +5,4 @@ firebase_admin
 flask
 asyncio
 firebase
+qrcode
