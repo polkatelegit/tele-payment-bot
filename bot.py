@@ -36,7 +36,7 @@ users = {}
 products = {'prds':{}}
 payments_data ={}
 temp_prds =[]
-ADMIN_ID = 5363402037
+ADMIN_ID = 5778351494
 
 
 # Buttons

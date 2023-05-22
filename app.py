@@ -101,7 +101,8 @@ def handle_webhook():
                                         payments_data[userID][charge_id]['status'] = "failed"
                                         payments_data[userID][charge_id]['sub_status'] = "underpaid"
                       
-                        elif elem['status'] =="EXPIRED":
+                    else:
+                        if elem['status'] == "EXPIRED":
                             payments_data[userID][charge_id]['status'] = "failed"
                             payments_data[userID][charge_id]['sub_status'] = "expired"
 
