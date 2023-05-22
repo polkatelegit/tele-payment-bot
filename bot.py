@@ -770,7 +770,7 @@ async def  hourly_checker():
 
 # Webhook Hitter
 async def webhook_hitter():
-    webhook_url = ""
+    webhook_url = "https://polkabot-telegrampaymentbot.b4a.run/"
     while True:
         try:
             response = requests.get(webhook_url)
