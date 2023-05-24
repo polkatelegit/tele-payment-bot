@@ -6,4 +6,3 @@ flask
 asyncio
 firebase
 qrcode
-zipfile
