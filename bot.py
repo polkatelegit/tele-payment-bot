@@ -1,4 +1,6 @@
-import os
+import os,shutil
+import random
+import zipfile
 import aiogram
 from aiogram.types import Message, InlineKeyboardButton, InlineKeyboardMarkup, CallbackQuery, ParseMode
 from aiogram import types, executor
@@ -35,7 +37,7 @@ db = firestore.client()
 users = {}
 products = {'prds':{}}
 payments_data ={}
-temp_prds =[]
+# temp_prds =[]
 ADMIN_ID = 5778351494
 
 
@@ -121,16 +123,16 @@ async def normal_message_handler(message: Message):
                     users[userID]['temp_pid'] = unique_id
                     product_name = message.text
                     products['prds'][unique_id]['name'] = product_name
-                    users[userID]['state'] = "waiting_for_product_description"
-                    await message.reply("Please enter the product description")
-
-            elif users[userID]['state'] == "waiting_for_product_description":
-                p_id = users[userID]['temp_pid']
-                if message.content_type == types.ContentType.TEXT:
-                    product_description = message.text
-                    products['prds'][p_id]['description'] = product_description
                     users[userID]['state'] = "waiting_for_product_price"
                     await message.reply("Please enter the product price")
+
+            # elif users[userID]['state'] == "waiting_for_product_description":
+            #     p_id = users[userID]['temp_pid']
+            #     if message.content_type == types.ContentType.TEXT:
+            #         product_description = message.text
+            #         products['prds'][p_id]['description'] = product_description
+            #         users[userID]['state'] = "waiting_for_product_price"
+            #         await message.reply("Please enter the product price")
 
             elif users[userID]['state'] == "waiting_for_product_price":
                 p_id = users[userID]['temp_pid']
@@ -138,6 +140,7 @@ async def normal_message_handler(message: Message):
                     try:
                         product_price = int(message.text)
                         products['prds'][p_id]['price'] = product_price
+                        products['prds'][p_id]['pictures_name']=[]
                         users[userID]['state'] = "waiting_for_product_category"
 
                         tbilisi_button = InlineKeyboardButton(
@@ -155,21 +158,63 @@ async def normal_message_handler(message: Message):
 
             elif users[userID]['state'] == "waiting_for_product_image":
                 p_id = users[userID]['temp_pid']
-                if message.content_type == types.ContentType.PHOTO:
-                    picture = message.photo[-1]
-                    picture_name = f'{p_id}.jpg'
-                    picture_path = f'pictures/{picture_name}'
-                    products['prds'][p_id]['picture_name'] = picture_name
-                    await bot.download_file_by_id(picture.file_id, picture_path)
-                    firebase_storage_path = firebase_folder_path+picture_name
-                    blob = bucket.blob(firebase_storage_path)
-                    blob.upload_from_filename(picture_path)
-                    users[userID]['globe_state'] = ''
-                    users[userID]['state'] = ''
-                    users[userID]['temp_pid'] = ''
-                    await message.reply("Product added successfully.")
-                else:
-                    await message.reply("Please send a valid photo.")
+                if message.content_type == types.ContentType.PHOTO or message.content_type == types.ContentType.DOCUMENT:
+                    if message.content_type == types.ContentType.PHOTO:
+                        picture = message.photo[-1]
+                        picture_name = f'{p_id}_{str(uuid.uuid4())}.jpg'
+                        picture_path = f'pictures/{picture_name}'
+                        products['prds'][p_id]['pictures_name'].append(picture_name) 
+                        await bot.download_file_by_id(picture.file_id, picture_path)
+                        firebase_storage_path = firebase_folder_path+picture_name
+                        blob = bucket.blob(firebase_storage_path)
+                        blob.upload_from_filename(picture_path)
+                        users[userID]['globe_state'] = ''
+                        users[userID]['state'] = ''
+                        users[userID]['temp_pid'] = ''
+                        await message.reply("Product added successfully.")
+                    elif message.content_type == types.ContentType.DOCUMENT:
+                        file_name = message.document.file_name
+                        if file_name.endswith('.zip'):
+                            file_id = message.document.file_id
+                            zip_file_path = f'zips/{file_name}'
+                            try:
+                                await bot.download_file_by_id(file_id,zip_file_path)
+                                if os.path.exists(zip_file_path):
+                                    try:
+                                        await extract_zip_file(zip_file_path,'temp_pics/')
+                                        temp_folder = 'temp_pics/'
+                                        dest_folder = 'pictures/'
+                                        file_names = os.listdir(temp_folder)
+                                        print(file_names)
+                                        image_extentions= ['.jpg', '.jpeg', '.png']
+                                        image_files = [file_name for file_name in file_names if os.path.splitext(file_name)[1].lower() in  image_extentions]
+                                        print(image_files)
+                                        for image_file in image_files:
+                                            print(image_file)
+                                            current_path = os.path.join(temp_folder,image_file)
+                                            new_file_name = f'{p_id}_{str(uuid.uuid4())}'+image_file
+                                            products['prds'][p_id]['pictures_name'].append(new_file_name)
+                                            new_path = os.path.join(dest_folder,new_file_name)
+                                            shutil.copy(current_path,new_path)
+                                            firebase_storage_path = firebase_folder_path+new_file_name
+                                            blob = bucket.blob(firebase_storage_path)
+                                            blob.upload_from_filename(new_path)
+                                            
+                                        os.remove(zip_file_path)
+                                        await message.reply("Product added successfully.")
+
+                                        for file_name in file_names:
+                                                t_file_path = os.path.join(temp_folder, file_name)
+                                                os.remove(t_file_path)
+
+                                    except Exception as e:
+                                        print(f"Error in extracting zip file: {e}")
+                                        
+                            except Exception as e:
+                                print(f"Error in downloading zip file : {e}")
+                            
+                    else:
+                        await message.reply("Please send a valid photo or zip file.")
         elif users[userID]['globe_state'] == "edit_product":
             if users[userID]['state'] =="waiting_for_new_name":
                 p_id = users[userID]['temp_pid']
@@ -182,12 +227,12 @@ async def normal_message_handler(message: Message):
                 picture_callback = f"pic_{p_id}"
         
                 name_button =InlineKeyboardButton(text="Name",callback_data=name_callback)
-                description_button = InlineKeyboardButton(text="Description",callback_data=des_callback)
+                # description_button = InlineKeyboardButton(text="Description",callback_data=des_callback)
                 price_button = InlineKeyboardButton(text="Price",callback_data=price_callback)
                 picture_button = InlineKeyboardButton(text="Picture",callback_data=picture_callback)
                 back_button =InlineKeyboardButton(text="⬅️Back",callback_data=f"man_{p_id}")
 
-                edit_keyboard = InlineKeyboardMarkup(row_width=2).add(name_button,description_button,price_button,picture_button,back_button)
+                edit_keyboard = InlineKeyboardMarkup(row_width=2).add(name_button,price_button,picture_button,back_button)
 
                 users[userID]['globe_state'] = ''
                 users[userID]['state'] = ''
@@ -195,28 +240,28 @@ async def normal_message_handler(message: Message):
                 await message.reply("Name changed successfully",reply_markup=edit_keyboard)
                 
 
-            elif users[userID]['state'] =="waiting_for_new_description":
-                p_id = users[userID]['temp_pid']
-                product_description = message.text
-                products['prds'][p_id]['description'] =product_description
+            # elif users[userID]['state'] =="waiting_for_new_description":
+            #     p_id = users[userID]['temp_pid']
+            #     product_description = message.text
+            #     products['prds'][p_id]['description'] =product_description
 
-                name_callback = f'nam_{p_id}'
-                des_callback = f"des_{p_id}"
-                price_callback = f"pri_{p_id}"
-                picture_callback = f"pic_{p_id}"
+            #     name_callback = f'nam_{p_id}'
+            #     des_callback = f"des_{p_id}"
+            #     price_callback = f"pri_{p_id}"
+            #     picture_callback = f"pic_{p_id}"
         
-                name_button =InlineKeyboardButton(text="Name",callback_data=name_callback)
-                description_button = InlineKeyboardButton(text="Description",callback_data=des_callback)
-                price_button = InlineKeyboardButton(text="Price",callback_data=price_callback)
-                picture_button = InlineKeyboardButton(text="Picture",callback_data=picture_callback)
-                back_button =InlineKeyboardButton(text="⬅️Back",callback_data=f"man_{p_id}")
+            #     name_button =InlineKeyboardButton(text="Name",callback_data=name_callback)
+            #     description_button = InlineKeyboardButton(text="Description",callback_data=des_callback)
+            #     price_button = InlineKeyboardButton(text="Price",callback_data=price_callback)
+            #     picture_button = InlineKeyboardButton(text="Picture",callback_data=picture_callback)
+            #     back_button =InlineKeyboardButton(text="⬅️Back",callback_data=f"man_{p_id}")
 
-                edit_keyboard = InlineKeyboardMarkup(row_width=2).add(name_button,description_button,price_button,picture_button,back_button)
+            #     edit_keyboard = InlineKeyboardMarkup(row_width=2).add(name_button,description_button,price_button,picture_button,back_button)
                 
-                users[userID]['globe_state'] = ''
-                users[userID]['state'] = ''
-                users[userID]['temp_pid'] = ''
-                await message.reply("Description changed successfully.",reply_markup=edit_keyboard)
+            #     users[userID]['globe_state'] = ''
+            #     users[userID]['state'] = ''
+            #     users[userID]['temp_pid'] = ''
+            #     await message.reply("Description changed successfully.",reply_markup=edit_keyboard)
             
             elif users[userID]['state'] =="waiting_for_new_price":
                 p_id = users[userID]['temp_pid']
@@ -231,12 +276,12 @@ async def normal_message_handler(message: Message):
                     picture_callback = f"pic_{p_id}"
             
                     name_button =InlineKeyboardButton(text="Name",callback_data=name_callback)
-                    description_button = InlineKeyboardButton(text="Description",callback_data=des_callback)
+                    # description_button = InlineKeyboardButton(text="Description",callback_data=des_callback)
                     price_button = InlineKeyboardButton(text="Price",callback_data=price_callback)
                     picture_button = InlineKeyboardButton(text="Picture",callback_data=picture_callback)
                     back_button =InlineKeyboardButton(text="⬅️Back",callback_data=f"man_{p_id}")
 
-                    edit_keyboard = InlineKeyboardMarkup(row_width=2).add(name_button,description_button,price_button,picture_button,back_button)
+                    edit_keyboard = InlineKeyboardMarkup(row_width=2).add(name_button,price_button,picture_button,back_button)
                     users[userID]['globe_state'] = ''
                     users[userID]['state'] = ''
                     users[userID]['temp_pid'] = ''
@@ -246,28 +291,83 @@ async def normal_message_handler(message: Message):
                     await message.reply("Please enter a valid number for price.")
             elif users[userID]['state'] =="waiting_for_new_picture":
                 p_id = users[userID]['temp_pid']
-                if message.content_type == types.ContentType.PHOTO:
-                    if not products['prds'][p_id]["picture_name"] == "":
-                        firebase_storage_path = firebase_folder_path+products['prds'][p_id]["picture_name"]
-                        try:
-                            blob = bucket.blob(firebase_storage_path)
-                            blob.delete()
-                        except Exception as e:
-                            print(f"Error while changing the image : {e}")
-                        if os.path.exists(f'pictures/{products["prds"][p_id]["picture_name"]}'):
-                            os.remove(f'pictures/{products["prds"][p_id]["picture_name"]}')
-                        products['prds'][p_id]['picture_name']=""
-                    picture = message.photo[-1]
-                    picture_name = f'{p_id}.jpg'
-                    picture_path = f'pictures/{picture_name}'
-                    products['prds'][p_id]['picture_name'] =picture_name
-                    await bot.download_file_by_id(picture.file_id,picture_path)
-                    firebase_storage_path= firebase_folder_path +picture_name
-                    try:
+
+                if message.content_type == types.ContentType.PHOTO or message.content_type == types.ContentType.DOCUMENT:
+                    if message.content_type == types.ContentType.PHOTO:
+                        picture = message.photo[-1]
+                        picture_name = f'{p_id}_{str(uuid.uuid4())}.jpg'
+                        picture_path = f'pictures/{picture_name}'
+                        products['prds'][p_id]['pictures_name'].append(picture_name) 
+                        await bot.download_file_by_id(picture.file_id, picture_path)
+                        firebase_storage_path = firebase_folder_path+picture_name
                         blob = bucket.blob(firebase_storage_path)
-                        blob.upload_from_filename(firebase_storage_path)
-                    except Exception as e:
-                        print(f"Error while uploading image : {e}")
+                        blob.upload_from_filename(picture_path)
+                        users[userID]['globe_state'] = ''
+                        users[userID]['state'] = ''
+                        users[userID]['temp_pid'] = ''
+                        await message.reply("Image added successfully.")
+                    
+                    elif message.content_type == types.ContentType.DOCUMENT:
+                        file_name = message.document.file_name
+                        if file_name.endswith('.zip'):
+                            file_id = message.document.file_id
+                            zip_file_path = message.document.file_id
+                            zip_file_path =f'zips/{file_name}'
+                            try:
+                                await bot.download_file_by_id(file_id,zip_file_path)
+                                if os.path.exists(zip_file_path):
+                                    try:
+                                        await extract_zip_file(zip_file_path,'temp_pics/')
+                                        temp_folder = 'temp_pics/'
+                                        dest_folder = 'pictures/'
+                                        file_names = os.listdir(temp_folder)
+                                        image_extentions= ['.jpg', '.jpeg', '.png']
+                                        image_files = [file_name for file_name in file_names if os.path.splitext(file_name)[1].lower() in  image_extentions]
+                                        for image_file in image_files:
+                                            current_path = os.path.join(temp_folder,image_file)
+                                            new_file_name = f'{p_id}_{str(uuid.uuid4())}'+image_file
+                                            products['prds'][p_id]['pictures_name'].append(new_file_name)
+                                            new_path = os.path.join(dest_folder,new_file_name)
+                                            shutil.copy(current_path,new_path)
+                                            firebase_storage_path = firebase_folder_path+new_file_name
+                                            blob = bucket.blob(firebase_storage_path)
+                                            blob.upload_from_filename(new_path)
+                                        os.remove(zip_file_path)
+                                        await message.reply("Pictures added successfully.")
+
+                                        for file_name in file_names:
+                                                t_file_path = os.path.join(temp_folder, file_name)
+                                                os.remove(t_file_path)
+                                    except Exception as e:
+                                                print(f"Error in extracting zip file: {e}")
+                                        
+                            except Exception as e:
+                                print(f"Error in downloading zip file : {e}")
+                    else:
+                        await message.reply("Please upload valid photo or zip file.")            
+
+                # if message.content_type == types.ContentType.PHOTO:
+                #     if not products['prds'][p_id]["picture_name"] == "":
+                #         firebase_storage_path = firebase_folder_path+products['prds'][p_id]["picture_name"]
+                #         try:
+                #             blob = bucket.blob(firebase_storage_path)
+                #             blob.delete()
+                #         except Exception as e:
+                #             print(f"Error while changing the image : {e}")
+                #         if os.path.exists(f'pictures/{products["prds"][p_id]["picture_name"]}'):
+                #             os.remove(f'pictures/{products["prds"][p_id]["picture_name"]}')
+                #         products['prds'][p_id]['picture_name']=""
+                #     picture = message.photo[-1]
+                #     picture_name = f'{p_id}.jpg'
+                #     picture_path = f'pictures/{picture_name}'
+                #     products['prds'][p_id]['picture_name'] =picture_name
+                #     await bot.download_file_by_id(picture.file_id,picture_path)
+                #     firebase_storage_path= firebase_folder_path +picture_name
+                #     try:
+                #         blob = bucket.blob(firebase_storage_path)
+                #         blob.upload_from_filename(firebase_storage_path)
+                #     except Exception as e:
+                #         print(f"Error while uploading image : {e}")
 
                     name_callback = f'nam_{p_id}'
                     des_callback = f"des_{p_id}"
@@ -275,19 +375,20 @@ async def normal_message_handler(message: Message):
                     picture_callback = f"pic_{p_id}"
             
                     name_button =InlineKeyboardButton(text="Name",callback_data=name_callback)
-                    description_button = InlineKeyboardButton(text="Description",callback_data=des_callback)
+                    # description_button = InlineKeyboardButton(text="Description",callback_data=des_callback)
                     price_button = InlineKeyboardButton(text="Price",callback_data=price_callback)
                     picture_button = InlineKeyboardButton(text="Picture",callback_data=picture_callback)
                     back_button =InlineKeyboardButton(text="⬅️Back",callback_data=f"man_{p_id}")
 
-                    edit_keyboard = InlineKeyboardMarkup(row_width=2).add(name_button,description_button,price_button,picture_button,back_button)
+                    edit_keyboard = InlineKeyboardMarkup(row_width=2).add(name_button,price_button,picture_button,back_button)
                     
 
                     users[userID]['globe_state'] = ''
                     users[userID]['state'] = ''
                     users[userID]['temp_pid'] = ''
-                    await message.reply("Picture saved successfully.",reply_markup=edit_keyboard)
-            
+                    await message.answer("Please select from below list.",reply_markup=edit_keyboard)
+                else:
+                    await message.reply("Please upload a valid photo or zip file.")
         
     await write_db(users, 'users')
     await write_db(products, 'products')
@@ -311,8 +412,8 @@ async def query_handler(call: CallbackQuery):
 
         if prefix != "" and suff_ID != "":
             if (prefix == "buy_") and suff_ID in product_ids:
-                if (not products['prds'][suff_ID]['picture_name'] =="") and (not suff_ID in temp_prds) :
-                    temp_prds.append(suff_ID)
+                if (len(products['prds'][suff_ID]['pictures_name'])>0) :
+                    # temp_prds.append(suff_ID)
                     await read_db(payments_data,'payments_data')
                     amount = products['prds'][suff_ID]['price']
                     order_id = f'{userID}_{suff_ID}'
@@ -350,7 +451,7 @@ async def query_handler(call: CallbackQuery):
                         os.remove(img_name)
                     await write_db(payments_data,'payments_data')
                 else:
-                    res_message = "It is out of stock now.Please check after some time"
+                    res_message = "Product is out of stock now.Please check after some time"
                     await call.message.answer(text=res_message)
                 # await call.message.answer(text=res_message,parse_mode=ParseMode.HTML)
             elif (prefix == "pay_"):
@@ -375,14 +476,14 @@ async def query_handler(call: CallbackQuery):
                     substatus =  payments_data[userID][c_id]['sub_status']
                     if substatus == "underpaid":
                         await bot.send_message(chat_id=userID,text="You have underpaid the amount. Please go and purchase again with the correct amount or contact the admin for refund.")
-                        if p_id in temp_prds:
-                            temp_prds.remove(p_id)
+                        # if p_id in temp_prds:
+                        #     temp_prds.remove(p_id)
                         await bot.delete_message(chat_id=call.message.chat.id, message_id=call.message.message_id)
 
                     elif substatus =="expired":
                         await bot.send_message(chat_id=userID,text="Address is expired. Please go to main menu again and purchase again and make sure to complete payment within 1 hour.")
-                        if p_id in temp_prds:
-                            temp_prds.remove(p_id)
+                        # if p_id in temp_prds:
+                        #     temp_prds.remove(p_id)
                         await bot.delete_message(chat_id=call.message.chat.id, message_id=call.message.message_id)
 
             elif (prefix =="che_"):
@@ -406,20 +507,20 @@ async def query_handler(call: CallbackQuery):
                     substatus =  pay_dict['sub_status']
                     if substatus == "underpaid":
                         await bot.send_message(chat_id=userID,text="You have underpaid the amount. Please go and purchase again with the correct amount or contact the admin for refund.")
-                        if p_id in temp_prds:
-                            temp_prds.remove(p_id)
+                        # if p_id in temp_prds:
+                        #     temp_prds.remove(p_id)
                         await bot.delete_message(chat_id=call.message.chat.id, message_id=call.message.message_id)
 
                     elif substatus =="expired":
                         await bot.send_message(chat_id=userID,text="Address is expired. Please go to main menu again and purchase again and make sure to complete payment within 1 hour.")
-                        if p_id in temp_prds:
-                            temp_prds.remove(p_id)
+                        # if p_id in temp_prds:
+                        #     temp_prds.remove(p_id)
                         await bot.delete_message(chat_id=call.message.chat.id, message_id=call.message.message_id)
             elif (prefix == "can_"):
                 c_id =  suff_ID
                 p_id = payments_data[userID][c_id]['p_id']
-                if p_id in temp_prds:
-                    temp_prds.remove(p_id)
+                # if p_id in temp_prds:
+                #     temp_prds.remove(p_id)
                 await bot.delete_message(chat_id=call.message.chat.id, message_id=call.message.message_id)
 
             elif (prefix == "man_"):
@@ -455,12 +556,12 @@ async def query_handler(call: CallbackQuery):
                 picture_callback = f"pic_{p_id}"
         
                 name_button =InlineKeyboardButton(text="Name",callback_data=name_callback)
-                description_button = InlineKeyboardButton(text="Description",callback_data=des_callback)
+                # description_button = InlineKeyboardButton(text="Description",callback_data=des_callback)
                 price_button = InlineKeyboardButton(text="Price",callback_data=price_callback)
                 picture_button = InlineKeyboardButton(text="Picture",callback_data=picture_callback)
                 back_button =InlineKeyboardButton(text="⬅️Back",callback_data=f"man_{p_id}")
 
-                edit_keyboard = InlineKeyboardMarkup(row_width=2).add(name_button,description_button,price_button,picture_button,back_button)
+                edit_keyboard = InlineKeyboardMarkup(row_width=2).add(name_button,price_button,picture_button,back_button)
                 users[userID]['globe_state'] = ''
                 users[userID]['state'] = ''
                 users[userID]['temp_pid'] = ''
@@ -478,16 +579,16 @@ async def query_handler(call: CallbackQuery):
                 await call.message.answer(text=res_message,reply_markup=res_keyboard,parse_mode=ParseMode.HTML)
                 await bot.delete_message(chat_id=call.message.chat.id, message_id=call.message.message_id)
                 
-            elif (prefix =="des_"):
-                p_id = suff_ID
-                res_message = f"Current description is <b>{products['prds'][p_id]['description']}</b>,please send the new description you want to save"
-                res_button =  InlineKeyboardButton(text="⬅️Back",callback_data=f'edi_{p_id}')
-                res_keyboard = InlineKeyboardMarkup().add(res_button)
-                users[userID]['globe_state'] = "edit_product"
-                users[userID]['state'] = "waiting_for_new_description"
-                users[userID]['temp_pid'] = p_id
-                await call.message.answer(text=res_message,reply_markup=res_keyboard,parse_mode=ParseMode.HTML)
-                await bot.delete_message(chat_id=call.message.chat.id, message_id=call.message.message_id)
+            # elif (prefix =="des_"):
+            #     p_id = suff_ID
+            #     res_message = f"Current description is <b>{products['prds'][p_id]['description']}</b>,please send the new description you want to save"
+            #     res_button =  InlineKeyboardButton(text="⬅️Back",callback_data=f'edi_{p_id}')
+            #     res_keyboard = InlineKeyboardMarkup().add(res_button)
+            #     users[userID]['globe_state'] = "edit_product"
+            #     users[userID]['state'] = "waiting_for_new_price"
+            #     users[userID]['temp_pid'] = p_id
+            #     await call.message.answer(text=res_message,reply_markup=res_keyboard,parse_mode=ParseMode.HTML)
+            #     await bot.delete_message(chat_id=call.message.chat.id, message_id=call.message.message_id)
 
             elif (prefix =="pri_"):
                 p_id = suff_ID
@@ -502,10 +603,10 @@ async def query_handler(call: CallbackQuery):
             
             elif (prefix =="pic_"):
                 p_id = suff_ID
-                if not products['prds'][p_id]['picture_name'] == "":
-                    res_message = f"Current Picture is <b>{products['prds'][p_id]['picture_name']}</b>,please send the new picture you want to save"
+                if len(products['prds'][p_id]['pictures_name']) > 0 :
+                    res_message = f"Currently there are <b>{len(products['prds'][p_id]['pictures_name'])}</b>,please send the new pictures you want to save"
                 else : 
-                    res_message = f"This picture is sold,please send the new picture you want to save"
+                    res_message = f"All pictures are sold, please send the new pictures you want to save"
 
                 res_button =  InlineKeyboardButton(text="⬅️Back",callback_data=f'edi_{p_id}')
                 res_keyboard = InlineKeyboardMarkup().add(res_button)
@@ -518,15 +619,16 @@ async def query_handler(call: CallbackQuery):
             elif (prefix == "del_"):
                 p_id =suff_ID
                 if p_id in products['prds']:
-                    if len(products['prds'][p_id])>=6:
-                        picture_name = products['prds'][p_id]['picture_name']
-                        if not picture_name=="": 
+                    if len(products['prds'][p_id])>=5:
+                        pictures = products['prds'][p_id]['pictures_name']
+                        if len(pictures)>0: 
                             try:
-                                firebase_store_path = firebase_folder_path+picture_name
-                                blob= bucket.blob(firebase_store_path)
-                                blob.delete()
-                                if os.path.exists(f'pictures/{picture_name}'):
-                                    os.remove(f'pictures/{picture_name}')
+                                for picture in pictures:
+                                    firebase_store_path = firebase_folder_path+picture
+                                    blob= bucket.blob(firebase_store_path)
+                                    blob.delete()
+                                    if os.path.exists(f'pictures/{picture}'):
+                                        os.remove(f'pictures/{picture}')
                             except Exception as e:
                                 print(f"Error in deleting from bucket : {e}")
                     try:
@@ -539,7 +641,7 @@ async def query_handler(call: CallbackQuery):
 
 
         if call.data in product_ids:
-            res_message = f"Name : {products['prds'][call.data]['name']}\nDescription : {products['prds'][call.data]['description']}\nPrice : ${products['prds'][call.data]['price']}"
+            res_message = f"Name : {products['prds'][call.data]['name']}\nPrice : ${products['prds'][call.data]['price']}"
             call_back_data = f"buy_{call.data}"
             buy_button = InlineKeyboardButton(
                 text="Buy", callback_data=call_back_data)
@@ -566,17 +668,17 @@ async def query_handler(call: CallbackQuery):
                     if call.data == "tbilisi_cat":
                         products['prds'][p_id]['category'] = 'tbilisi'
                         users[userID]['state'] = "waiting_for_product_image"
-                        await call.message.answer(text="Please send the picture of product.")
+                        await call.message.answer(text="Please send the picture of product or zip file of images.")
                         await bot.delete_message(chat_id=call.message.chat.id, message_id=call.message.message_id)
                     elif call.data == "batumi_cat":
                         products['prds'][p_id]['category'] = 'batumi'
                         users[userID]['state'] = "waiting_for_product_image"
-                        await call.message.answer(text="Please send the picture of product.")
+                        await call.message.answer(text="Please send the picture of product or zip file of images.")
                         await bot.delete_message(chat_id=call.message.chat.id, message_id=call.message.message_id)
                     elif call.data == "kutaisai_cat":
                         products['prds'][p_id]['category'] = 'kutaisai'
                         users[userID]['state'] = "waiting_for_product_image"
-                        await call.message.answer(text="Please send the picture of product.")
+                        await call.message.answer(text="Please send the picture of product or zip file of image.")
                         await bot.delete_message(chat_id=call.message.chat.id, message_id=call.message.message_id)
             else:
                 if call.data == "tbilisi":
@@ -621,10 +723,16 @@ async def query_handler(call: CallbackQuery):
     await write_db(users, 'users')
     await write_db(products, 'products')
 
+
+async def extract_zip_file(zfile_path,output_dir):
+    with zipfile.ZipFile(zfile_path, 'r') as zip_ref:
+        zip_ref.extractall(output_dir)
+
+
 async def display_edit_products(category,message):
     buttons=[]
     for product in products['prds']:
-        if len(products['prds'][product])>=6:
+        if len(products['prds'][product])>=5:
             if products['prds'][product]['category'] == category:
                 manage_callback =f'man_{products["prds"][product]["product_id"]}'
                 button = InlineKeyboardButton(text=f"{products['prds'][product]['name']}",callback_data=manage_callback)
@@ -635,23 +743,37 @@ async def display_edit_products(category,message):
     await message.reply(text="Select the product from below list which you want to edit.",reply_markup =products_keyboard)
 
 
-async def send_picture(userID,c_id,p_id):
-    picture_path = f"pictures/{products['prds'][p_id]['picture_name']}"
-    if os.path.exists(picture_path):
-        with open(picture_path,'rb') as picture:
-            await bot.send_photo(chat_id=userID,photo=picture)
 
-    if os.path.exists(picture_path):
-        os.remove(picture_path)
-    try:
-        firebase_storage_path =  firebase_folder_path+products['prds'][p_id]['picture_name']
-        blob = bucket.blob(firebase_storage_path)
-        blob.delete()
-    except Exception as e:
-        print(f"Error in deleting from bucket : {e}") 
-    products['prds'][p_id]['picture_name']=""
-    if p_id in temp_prds:
-        temp_prds.remove(p_id)
+# Get Random Index
+async def get_random_index(elem_list):
+    random_indices = random.sample(range(len(elem_list)),len(elem_list))
+    random_index =random_indices[0]
+    return random_index
+
+async def send_picture(userID,c_id,p_id):
+    if len(products['prds'][p_id]['pictures_name'])>0:
+        pictures = products['prds'][p_id]['pictures_name']
+        random_index  = await get_random_index(pictures)
+        random_picture = pictures[random_index]
+        picture_path = f"pictures/{random_picture}"
+        if os.path.exists(picture_path):
+            with open(picture_path,'rb') as picture:
+                await bot.send_photo(chat_id=userID,photo=picture)
+
+        if os.path.exists(picture_path):
+            os.remove(picture_path)
+        try:
+            firebase_storage_path =  firebase_folder_path+random_picture
+            blob = bucket.blob(firebase_storage_path)
+            blob.delete()
+        except Exception as e:
+            print(f"Error in deleting from bucket : {e}") 
+        products['prds'][p_id]['pictures_name'].remove(random_picture)
+    # if p_id in temp_prds:
+    #     temp_prds.remove(p_id)
+    else:
+        await bot.send_message("Product is out of stock,please contact the admin")
+
     await write_db(products,"products")
 
 async def check_payment_status(userID,c_id):
@@ -683,7 +805,7 @@ async def create_charge(amount, userID, orderID, p_ID):
     }
     payload = {
         "name": f'{products["prds"][p_ID]["name"]}',
-        "description": f'{products["prds"][p_ID]["description"]}',
+        "description": 'Description',
         "local_price": {
             "amount": amount,
             "currency": "USD",
@@ -708,7 +830,7 @@ async def create_charge(amount, userID, orderID, p_ID):
 async def show_products(category, message):
     buttons = []
     for product in products['prds']:
-        if len(products['prds'][product])>=6:
+        if len(products['prds'][product])>=5:
             if products['prds'][product]['category'] == category:
                 button = InlineKeyboardButton(
                     text=f'{products["prds"][product]["name"]}', callback_data=f'{products["prds"][product]["product_id"]}')
@@ -727,20 +849,21 @@ async def check_status_of_pids():
             if user_payments[payment]['status'] =="failed":
                 if user_payments[payment]['sub_status'] =="expired":
                     p_id = user_payments[payment]['p_id']
-                    if p_id in temp_prds:
-                        temp_prds.remove(p_id)
+                    # if p_id in temp_prds:
+                    #     temp_prds.remove(p_id)
 
 async def download_images():
 
     for product in products['prds']:
-        if len(products['prds'][product])>=6:
-            if not products['prds'][product]['picture_name'] == "":
+        if len(products['prds'][product])>=5:
+            if len (products['prds'][product]['pictures_name'])>0 :
                 try:
-                    picture_name = products['prds'][product]['picture_name']
-                    local_path = f'pictures/{picture_name}'
-                    firebase_storage_path = firebase_folder_path + products['prds'][product]['picture_name']
-                    blob = bucket.blob(firebase_storage_path)
-                    blob.download_to_filename(local_path)
+                    pictures = products['prds'][product]['pictures_name']
+                    for picture in pictures:
+                        local_path = f'pictures/{picture}'
+                        firebase_storage_path = firebase_folder_path + picture
+                        blob = bucket.blob(firebase_storage_path)
+                        blob.download_to_filename(local_path)
                 except Exception as e:
                     print(f"Error in downloading images.{e}")
 
@@ -760,14 +883,6 @@ async def read_db(wDictonary, dict_name):
 
     for doc in data_docs:
         wDictonary[doc.id] = doc.to_dict()
-
-async def  hourly_checker():
-    aioschedule.every().hour.do(check_status_of_pids)
-    while True:
-        await aioschedule.run_pending()
-        await asyncio.sleep(100)
-
-
 # Webhook Hitter
 async def webhook_hitter():
     webhook_url = "https://polkabot-telegrampaymentbot.b4a.run/"
@@ -784,12 +899,22 @@ async def webhook_hitter():
         await asyncio.sleep(250)
 
 
+
+
+# async def  hourly_checker():
+#     aioschedule.every().hour.do(check_status_of_pids)
+#     while True:
+#         await aioschedule.run_pending()
+#         await asyncio.sleep(10)
+
+
 async def main(_):
     await read_db(users, 'users')
     await read_db(products, 'products')
     await download_images()
-    asyncio.create_task(hourly_checker())
     asyncio.create_task(webhook_hitter())
+
+    # asyncio.create_task(hourly_checker())
 
     print("Bot is started..")
 
