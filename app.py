@@ -61,50 +61,42 @@ def handle_webhook():
 
         payload = request.get_json()
         metadata = payload['event']['data']['metadata']
-        charge_id = payload['event']['data']['id']
         charge_type = payload['event']['type']
+        userID = metadata['user_id']
+
+        if not str(userID) in payments_data['payments']:
+            payments_data['payments'][str(userID)] = {}
+            payments_data['payments'][str(userID)]['balance'] = 0
+
+        ltc_exchange_rate = float(payload['event']['data']['exchange_rates']['LTC-USD'])
+        
         
         if charge_type == "charge:confirmed":
-            userID = metadata['user_id']
             if userID in payments_data:
-                if charge_id in payments_data[userID]:
-                    for elem in payload['event']['data']['timeline']:
+                for elem in payload['event']['data']['timeline']:
                         if "payment" in elem:
                             if elem['status'] =="COMPLETED":
-                                payments_data[userID][charge_id]['status'] = "confirmed"
+                                coin_amount = float(elem['payment']['value']['amount'])
+                                usd_value  = round(coin_amount*ltc_exchange_rate,2)
+                                payments_data['payments'][userID]['balance'] =payments_data['payments'][userID]['balance']+ usd_value
+
                                 
         elif charge_type == "charge:pending":
             userID = metadata['user_id']
             if userID in payments_data:
-                if charge_id in payments_data[userID]:
-                    payments_data[userID][charge_id]['status'] = "pending"
+                return
             
         elif charge_type == "charge:failed":
             userID = metadata['user_id']
-            if charge_id in payments_data[userID]:
-                for elem in payload['event']['data']['timeline']:
-                    if 'payment' in elem:
-                        if elem['status'] == "UNRESOLVED":
-                            if 'context' in elem:
-                                if elem['context'] == "OVERPAID":
-                                    payments_data[userID][charge_id]['status'] = "confirmed"
-                                elif elem['context'] == "UNDERPAID":
-                                    actual_amount = elem['payment']['value']['amount']
-                                    expected_amount = payments_data[userID][charge_id]['amount']
-                                    amount_diff = float(expected_amount)-float(actual_amount)
-                                    current_exchnage_rate = float(payload['event']['data']['exchange_rates']['LTC-USD'])
-                                    usd_value = amount_diff*current_exchnage_rate
+            for elem in payload['event']['data']['timeline']:
+                if 'payment' in elem:
+                    if elem['status'] == "UNRESOLVED":
+                        if 'context' in elem:
+                            if elem['context'] == "OVERPAID" or elem['context'] == "UNDERPAID":
+                                coin_amount = float(elem['payment']['value']['amount'])
+                                usd_value  = round(coin_amount*ltc_exchange_rate,2)
+                                payments_data['payments'][userID]['balance'] =payments_data['payments'][userID]['balance']+ usd_value
 
-                                    if usd_value < 1:
-                                        payments_data[userID][charge_id]['status'] = "confirmed"
-                                    else:
-                                        payments_data[userID][charge_id]['status'] = "failed"
-                                        payments_data[userID][charge_id]['sub_status'] = "underpaid"
-                      
-                    else:
-                        if elem['status'] == "EXPIRED":
-                            payments_data[userID][charge_id]['status'] = "failed"
-                            payments_data[userID][charge_id]['sub_status'] = "expired"
 
     except Exception as e:
         abort(400,'Failed to parse JSON payload: {}'.format(e))
