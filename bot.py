@@ -46,8 +46,7 @@ batumi_button = InlineKeyboardButton(text="Batumi", callback_data="batumi")
 kutaisi_button = InlineKeyboardButton(text="Kutaisi", callback_data='kutaisai')
 wallet_button= InlineKeyboardButton(text="Wallet", callback_data='wallet')
 
-main_keyboard = InlineKeyboardMarkup().add(
-    tbilisi_button, batumi_button, kutaisi_button,wallet_button)
+main_keyboard = InlineKeyboardMarkup().add(tbilisi_button, batumi_button, kutaisi_button,wallet_button)
 
 # Start command
 
@@ -66,9 +65,26 @@ async def start_command(message: Message):
         users[userID]['globe_state'] = ""
         users[userID]['state'] = ""
         users[userID]['temp_pid'] = ""
-    await message.reply("Welcome to the bot!!!\n\nSelect from the this list.",reply_markup=main_keyboard)
+
+    payments_data ={}
+    await read_db(payments_data,'payments_data')
+
+    if userID in payments_data['payments']:
+        user_balance = payments_data['payments'][userID]['balance']
+        if not user_balance == 0:
+            users[userID]['wallet_balance'] += user_balance
+            payments_data['payments'][userID]['balance'] =0
+
+    tbilisi_button = InlineKeyboardButton(text="Tbilisi", callback_data='tbilisi')
+    batumi_button = InlineKeyboardButton(text="Batumi", callback_data="batumi")
+    kutaisi_button = InlineKeyboardButton(text="Kutaisi", callback_data='kutaisai')
+    wallet_button= InlineKeyboardButton(text=f"Balance : {users[userID]['wallet_balance']} / TopUp", callback_data='top_up')
+    start_keyboard = InlineKeyboardMarkup().add(tbilisi_button, batumi_button, kutaisi_button,wallet_button)
+
+    await message.reply("Welcome to the bot!!!\n\nSelect from the this list.",reply_markup=start_keyboard)
     await write_db(users, 'users')
     await write_db(products, 'products')
+    await write_db(payments_data,"payments_data")
 
 
 @dp.message_handler(commands=['showproducts'])
@@ -545,24 +561,24 @@ Note: If you have enough balance in your wallet and when you will click on buy y
                     await show_products(category="kutaisai", message=call.message)
                     await bot.delete_message(chat_id=call.message.chat.id, message_id=call.message.message_id)
         
-                elif call.data == "wallet":
+                # elif call.data == "wallet":
                     
-                    payments_data ={}
-                    await read_db(payments_data,'payments_data')
+                #     payments_data ={}
+                #     await read_db(payments_data,'payments_data')
 
-                    if userID in payments_data['payments']:
-                        user_balance = payments_data['payments'][userID]['balance']
-                        if not user_balance == 0:
-                            users[userID]['wallet_balance'] += user_balance
-                            payments_data['payments'][userID]['balance'] =0
+                #     if userID in payments_data['payments']:
+                #         user_balance = payments_data['payments'][userID]['balance']
+                #         if not user_balance == 0:
+                #             users[userID]['wallet_balance'] += user_balance
+                #             payments_data['payments'][userID]['balance'] =0
                         
 
-                    res_message = f" Your wallet balance is <b>${users[userID]['wallet_balance']}</b>"
-                    top_up_button =  InlineKeyboardButton(text="TOP UP",callback_data="top_up")
-                    topup_keyboard = InlineKeyboardMarkup().add(top_up_button)
-                    await call.message.answer(text=res_message,reply_markup=topup_keyboard,parse_mode=ParseMode.HTML)
+                #     res_message = f" Your wallet balance is <b>${users[userID]['wallet_balance']}</b>"
+                #     top_up_button =  InlineKeyboardButton(text="TOP UP",callback_data="top_up")
+                #     topup_keyboard = InlineKeyboardMarkup().add(top_up_button)
+                #     await call.message.answer(text=res_message,reply_markup=topup_keyboard,parse_mode=ParseMode.HTML)
 
-                    await write_db(payments_data,'payments_data')
+                #     await write_db(payments_data,'payments_data')
                 elif call.data == "top_up":
 
                     res_dict = await create_charge_for_topup(amount=45,userID=userID)
@@ -609,9 +625,10 @@ When the payment is confirmed on the network check your wallet balance again."""
                         os.remove(img_name)
 
                 elif call.data == "payment_done":
-                    res_message = """Please wait for sometime till transaction get confirmed on the network. Once transaction is confirmed you can check your wallet balance."""
+                    res_message = """Please wait for sometime till transaction get confirmed on the network. Once transaction is confirmed you can check your wallet balance by using start command."""
                     await call.message.answer(text=res_message)
                     await bot.edit_message_reply_markup(chat_id=userID,message_id=call.message.message_id,reply_markup=None)
+                
                 elif call.data == "back_to_main_menu":
                     res_message = "Select any one from this"
                     await call.message.answer(text=res_message, reply_markup=main_keyboard)
