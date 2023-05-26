@@ -831,7 +831,7 @@ async def webhook_hitter():
         except Exception as e:
             print(f"Error in webhook : {e}")
 
-        await asyncio.sleep(250)
+        await asyncio.sleep(600)
 
 
 
