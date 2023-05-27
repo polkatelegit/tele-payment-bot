@@ -858,7 +858,7 @@ async def show_products(category, message):
     back_button = InlineKeyboardButton(
         text="⬅️უკან / Назад", callback_data="back_to_main_menu")
     buttons.append(back_button)
-    products_keyboard = InlineKeyboardMarkup(row_width=2).add(*buttons)
+    products_keyboard = InlineKeyboardMarkup(row_width=1).add(*buttons)
     await message.answer(text="⬇️⬇️⬇️", reply_markup=products_keyboard)
 
 
