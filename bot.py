@@ -74,7 +74,7 @@ async def start_command(message: Message):
     if userID in payments_data['payments']:
         user_balance = payments_data['payments'][userID]['balance']
         if not user_balance == 0:
-            users[userID]['wallet_balance'] += user_balance
+            users[userID]['wallet_balance'] += round(user_balance, 2) 
             payments_data['payments'][userID]['balance'] =0
 
     tbilisi_button = InlineKeyboardButton(text="Tbilisi", callback_data='tbilisi')
@@ -519,7 +519,7 @@ async def query_handler(call: CallbackQuery):
 
         if call.data in product_ids:
 
-            res_message = f"""{products['prds'][call.data]['name']} (${products['prds'][call.data]['price']})
+            res_message = f"""{products['prds'][call.data]['name']}
 Wallet Credit : ${users[userID]['wallet_balance']}
 
 ყიდვის შემდეგ კრედიტები ჩამოგეჭრება ბალანსიდან. 
