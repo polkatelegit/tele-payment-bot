@@ -634,9 +634,10 @@ Wallet Credit : ${users[userID]['wallet_balance']}
 
                     with open (img_name,'rb') as qrfile:
                         await bot.send_photo(userID,qrfile)
-                    
-                    await call.message.answer(chat_id=userID,text= res_message,parse_mode=ParseMode.HTML,reply_markup=payment_keyboard)
-
+                    try:
+                        await call.message.answer(chat_id=userID,text= res_message,parse_mode=ParseMode.HTML,reply_markup=payment_keyboard)
+                    except Exception as e:
+                        await call.message.answer(chat_id =userID,text=f'{e}')
                     if os.path.exists(img_name):
                         os.remove(img_name)
 
