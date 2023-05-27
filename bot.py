@@ -78,10 +78,11 @@ async def start_command(message: Message):
     tbilisi_button = InlineKeyboardButton(text="Tbilisi", callback_data='tbilisi')
     batumi_button = InlineKeyboardButton(text="Batumi", callback_data="batumi")
     kutaisi_button = InlineKeyboardButton(text="Kutaisi", callback_data='kutaisai')
-    wallet_button= InlineKeyboardButton(text=f"Balance : {users[userID]['wallet_balance']} / TopUp", callback_data='top_up')
+    wallet_button= InlineKeyboardButton(text=f"Credit : {users[userID]['wallet_balance']} / შევსება", callback_data='top_up')
+    wallet_button= InlineKeyboardButton(text=f"Credit : {users[userID]['wallet_balance']} / Пополнить", callback_data='top_up')
     start_keyboard = InlineKeyboardMarkup().add(tbilisi_button, batumi_button, kutaisi_button,wallet_button)
 
-    await message.reply("Welcome to the bot!!!\n\nSelect from the this list.",reply_markup=start_keyboard)
+    await message.reply("🖐️გამარჯობა / Привет",reply_markup=start_keyboard)
     await write_db(users, 'users')
     await write_db(products, 'products')
     await write_db(payments_data,"payments_data")
@@ -504,12 +505,13 @@ async def query_handler(call: CallbackQuery):
 
         if call.data in product_ids:
 
-            res_message = f"""Name : {products['prds'][call.data]['name']}
-Price : ${products['prds'][call.data]['price']}
-Your wallet balance : ${users[userID]['wallet_balance']}
+            res_message = f"""{products['prds'][call.data]['name']} (${products['prds'][call.data]['price']})
+Wallet Credit : ${users[userID]['wallet_balance']}
 
-Note: If you have enough balance in your wallet and when you will click on buy your order will be placed and funds will be deducted from your wallet.
-            """
+ყიდვის შემდეგ კრედიტები ჩამოგეჭრება ბალანსიდან. 
+Кредиты будут списаны с вашего баланса после покупки.
+
+"""
             call_back_data = f"buy_{call.data}"
             buy_button = InlineKeyboardButton(
                 text="Buy", callback_data=call_back_data)
@@ -602,21 +604,26 @@ Note: If you have enough balance in your wallet and when you will click on buy y
                     coin_80_amount = round(float(81/ltc_rate),4)
                     coin_160_amount = round(float(161/ltc_rate),4)
 
-                    res_message = f"""Payment details
+                    res_message = f"""გადახდის დეტალები / Детали оплаты
 <code>{coin_45_amount}</code> Litecoin LTC for <b>$45</b>credit
 <code>{coin_80_amount}</code> Litecoin LTC for <b>$80</b>credit
 <code>{coin_160_amount}</code> Litecoin LTC for <b>$160</b>credit
 
 <b>Address</b>: <code>{res_dict['receiving_address']}</code>
 
-You are free to send any amount, it will be captured and added to your wallet.
+შეგიძლია გამოაგზავნო ნებისმიერი ოდენობის თანხა / Вы можете отправить любую сумму денег
                 
-⚠️You have <b>1 hour</b> to send the amount after that address will expire⚠️. 
-Once you have completed the payment click on confirm payment.
+⚠️1 საათში კოდს დრო გაუვა. დააჭირე "შევსება"-ს თავიდან. ბოტი მოგცემს ახალ კოდს. შეეცადე ისე ქნა, რომ ახალი კოდის მოცემისთანავე ჩარიცხო თანხა!
 
-Only do single transaction on this address, for adding more funds go to wallet and generate new address.
+ერთ კოდზე გამოაგზავნე ერთხელ. თუ თანხა დაგაკლდა თავიდან შეავსე ბალანსი.    იგივე კოდზე სადაც უკვე ჩარიცხულიგაქ არ ჩარიცხო!
 
-When the payment is confirmed on the network check your wallet balance again."""
+როცა ჩარიცხავ თანხას დააჭირე "დადასტურება"-ს. დაელოდე 5 - 10 წუთი და თანხა აისახება კრედიტებით. შემდეგ პირდაპირ შეძლებ ბოტისგან მისამართის აღებას.
+
+Срок действия кода истекает через 1 час. Нажмите «Заполнить» еще раз. Бот выдаст вам новый код. Попробуйте внести депозит, как только будет предоставлен новый код!
+
+Внесите сумму один раз за код. Если суммы недостаточно, пополните баланс еще раз. Не вносите деньги на тот же код, на который вы уже вносили депозит!
+
+Когда вы вносите сумму, нажмите «Подтвердить». Подождите 5-10 минут и сумма будет отражена в кредитах. Тогда вы сможете напрямую взять адрес у бота.⚠️"""
 
                     with open (img_name,'rb') as qrfile:
                         await bot.send_photo(userID,qrfile,caption=res_message,parse_mode=ParseMode.HTML,reply_markup=payment_keyboard)
