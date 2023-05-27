@@ -37,7 +37,9 @@ db = firestore.client()
 users = {}
 products = {'prds':{}}
 # temp_prds =[]
-ADMIN_ID = 5778351494
+# ADMIN_ID = 5778351494
+ADMIN_ID = 5363402037
+
 
 
 # Buttons
