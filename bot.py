@@ -41,12 +41,12 @@ ADMIN_ID = 5778351494
 
 
 # Buttons
-tbilisi_button = InlineKeyboardButton(text="Tbilisi", callback_data='tbilisi')
-batumi_button = InlineKeyboardButton(text="Batumi", callback_data="batumi")
-kutaisi_button = InlineKeyboardButton(text="Kutaisi", callback_data='kutaisai')
-wallet_button= InlineKeyboardButton(text="Wallet", callback_data='wallet')
+# tbilisi_button = InlineKeyboardButton(text="Tbilisi", callback_data='tbilisi')
+# batumi_button = InlineKeyboardButton(text="Batumi", callback_data="batumi")
+# kutaisi_button = InlineKeyboardButton(text="Kutaisi", callback_data='kutaisai')
+# wallet_button= InlineKeyboardButton(text="Wallet", callback_data='wallet')
 
-main_keyboard = InlineKeyboardMarkup().add(tbilisi_button, batumi_button, kutaisi_button,wallet_button)
+# main_keyboard = InlineKeyboardMarkup().add(tbilisi_button, batumi_button, kutaisi_button,wallet_button)
 
 # Start command
 
@@ -82,7 +82,7 @@ async def start_command(message: Message):
     r_wallet_button= InlineKeyboardButton(text=f"Credit : ${users[userID]['wallet_balance']} / Пополнить", callback_data='top_up')
     start_keyboard = InlineKeyboardMarkup(row_width=1).add(tbilisi_button, batumi_button, kutaisi_button,g_wallet_button,r_wallet_button)
 
-    await message.reply("🖐️გამარჯობა / Привет",reply_markup=start_keyboard)
+    await message.answer("🖐️გამარჯობა / Привет",reply_markup=start_keyboard)
     await write_db(users, 'users')
     await write_db(products, 'products')
     await write_db(payments_data,"payments_data")
@@ -95,7 +95,14 @@ async def showproducts(message: Message):
     users[userID]['state'] = ''
     users[userID]['temp_pid'] = ''
     res_message = "Select any one from this"
-    await message.reply(text=res_message, reply_markup=main_keyboard)
+
+    tbilisi_button = InlineKeyboardButton(text="Tbilisi", callback_data='tbilisi')
+    batumi_button = InlineKeyboardButton(text="Batumi", callback_data="batumi")
+    kutaisi_button = InlineKeyboardButton(text="Kutaisi", callback_data='kutaisai')
+    g_wallet_button= InlineKeyboardButton(text=f"Credit : ${users[userID]['wallet_balance']} / შევსება", callback_data='top_up')
+    r_wallet_button= InlineKeyboardButton(text=f"Credit : ${users[userID]['wallet_balance']} / Пополнить", callback_data='top_up')
+    start_keyboard = InlineKeyboardMarkup(row_width=1).add(tbilisi_button, batumi_button, kutaisi_button,g_wallet_button,r_wallet_button)
+    await message.answer(text=res_message, reply_markup=start_keyboard)
 
 
 @dp.message_handler(commands=['editproducts'])
@@ -111,7 +118,7 @@ async def manage_products(message:Message):
         kutaisi_button = InlineKeyboardButton(text="Kutaisi", callback_data='kutaisai_edit')
 
         manage_prdocuts_keyboard = InlineKeyboardMarkup().add(tbilisi_button, batumi_button, kutaisi_button)
-        await message.reply(text="Please select product category.",reply_markup=manage_prdocuts_keyboard)
+        await message.answer(text="Please select product category.",reply_markup=manage_prdocuts_keyboard)
 
 
 
@@ -124,7 +131,7 @@ async def add_product(message: Message):
     if userID == str(ADMIN_ID):
         users[userID]['globe_state'] = 'add_product'
         users[userID]['state'] = 'waiting_for_product_name'
-        await message.reply("Please enter the product name")
+        await message.answer("Please enter the product name")
 
 
 @dp.message_handler(content_types=[types.ContentType.TEXT, types.ContentType.PHOTO, types.ContentType.DOCUMENT])
@@ -142,7 +149,7 @@ async def normal_message_handler(message: Message):
                     product_name = message.text
                     products['prds'][unique_id]['name'] = product_name
                     users[userID]['state'] = "waiting_for_product_price"
-                    await message.reply("Please enter the product price")
+                    await message.answer("Please enter the product price")
 
             elif users[userID]['state'] == "waiting_for_product_price":
                 p_id = users[userID]['temp_pid']
@@ -161,9 +168,9 @@ async def normal_message_handler(message: Message):
                             text="Kutaisi", callback_data='kutaisai_cat')
                         category_keyboard = InlineKeyboardMarkup(row_width=1).add(
                             tbilisi_button, batumi_button, kutaisi_button)
-                        await message.reply(text="Please select the product category", reply_markup=category_keyboard)
+                        await message.answer(text="Please select the product category", reply_markup=category_keyboard)
                     except Exception as e:
-                        await message.reply("Please enter a valid number for price.")
+                        await message.answer("Please enter a valid number for price.")
                         print(f"Product price error : {e}")
 
             elif users[userID]['state'] == "waiting_for_product_image":
@@ -181,7 +188,7 @@ async def normal_message_handler(message: Message):
                         users[userID]['globe_state'] = ''
                         users[userID]['state'] = ''
                         users[userID]['temp_pid'] = ''
-                        await message.reply("Product added successfully.")
+                        await message.answer("Product added successfully.")
                     elif message.content_type == types.ContentType.DOCUMENT:
                         file_name = message.document.file_name
                         if file_name.endswith('.zip'):
@@ -211,7 +218,7 @@ async def normal_message_handler(message: Message):
                                             blob.upload_from_filename(new_path)
                                             
                                         os.remove(zip_file_path)
-                                        await message.reply("Product added successfully.")
+                                        await message.answer("Product added successfully.")
 
                                         for file_name in file_names:
                                                 t_file_path = os.path.join(temp_folder, file_name)
@@ -224,7 +231,7 @@ async def normal_message_handler(message: Message):
                                 print(f"Error in downloading zip file : {e}")
                             
                     else:
-                        await message.reply("Please send a valid photo or zip file.")
+                        await message.answer("Please send a valid photo or zip file.")
         elif users[userID]['globe_state'] == "edit_product":
             if users[userID]['state'] =="waiting_for_new_name":
                 p_id = users[userID]['temp_pid']
@@ -240,14 +247,14 @@ async def normal_message_handler(message: Message):
                 # description_button = InlineKeyboardButton(text="Description",callback_data=des_callback)
                 price_button = InlineKeyboardButton(text="Price",callback_data=price_callback)
                 picture_button = InlineKeyboardButton(text="Picture",callback_data=picture_callback)
-                back_button =InlineKeyboardButton(text="⬅️Back",callback_data=f"man_{p_id}")
+                back_button =InlineKeyboardButton(text="⬅️უკან / Назад",callback_data=f"man_{p_id}")
 
                 edit_keyboard = InlineKeyboardMarkup(row_width=2).add(name_button,price_button,picture_button,back_button)
 
                 users[userID]['globe_state'] = ''
                 users[userID]['state'] = ''
                 users[userID]['temp_pid'] = ''
-                await message.reply("Name changed successfully",reply_markup=edit_keyboard)
+                await message.answer("Name changed successfully",reply_markup=edit_keyboard)
                 
 
             
@@ -267,16 +274,16 @@ async def normal_message_handler(message: Message):
                     # description_button = InlineKeyboardButton(text="Description",callback_data=des_callback)
                     price_button = InlineKeyboardButton(text="Price",callback_data=price_callback)
                     picture_button = InlineKeyboardButton(text="Picture",callback_data=picture_callback)
-                    back_button =InlineKeyboardButton(text="⬅️Back",callback_data=f"man_{p_id}")
+                    back_button =InlineKeyboardButton(text="⬅️უკან / Назад",callback_data=f"man_{p_id}")
 
                     edit_keyboard = InlineKeyboardMarkup(row_width=2).add(name_button,price_button,picture_button,back_button)
                     users[userID]['globe_state'] = ''
                     users[userID]['state'] = ''
                     users[userID]['temp_pid'] = ''
-                    await message.reply("Price saved successfully.",reply_markup=edit_keyboard)
+                    await message.answer("Price saved successfully.",reply_markup=edit_keyboard)
 
                 except Exception as e:
-                    await message.reply("Please enter a valid number for price.")
+                    await message.answer("Please enter a valid number for price.")
             elif users[userID]['state'] =="waiting_for_new_picture":
                 p_id = users[userID]['temp_pid']
 
@@ -293,7 +300,7 @@ async def normal_message_handler(message: Message):
                         users[userID]['globe_state'] = ''
                         users[userID]['state'] = ''
                         users[userID]['temp_pid'] = ''
-                        await message.reply("Image added successfully.")
+                        await message.answer("Image added successfully.")
                     
                     elif message.content_type == types.ContentType.DOCUMENT:
                         file_name = message.document.file_name
@@ -321,7 +328,7 @@ async def normal_message_handler(message: Message):
                                             blob = bucket.blob(firebase_storage_path)
                                             blob.upload_from_filename(new_path)
                                         os.remove(zip_file_path)
-                                        await message.reply("Pictures added successfully.")
+                                        await message.answer("Pictures added successfully.")
 
                                         for file_name in file_names:
                                                 t_file_path = os.path.join(temp_folder, file_name)
@@ -332,7 +339,7 @@ async def normal_message_handler(message: Message):
                             except Exception as e:
                                 print(f"Error in downloading zip file : {e}")
                     else:
-                        await message.reply("Please upload valid photo or zip file.")            
+                        await message.answer("Please upload valid photo or zip file.")            
 
 
                     name_callback = f'nam_{p_id}'
@@ -344,7 +351,7 @@ async def normal_message_handler(message: Message):
                     # description_button = InlineKeyboardButton(text="Description",callback_data=des_callback)
                     price_button = InlineKeyboardButton(text="Price",callback_data=price_callback)
                     picture_button = InlineKeyboardButton(text="Picture",callback_data=picture_callback)
-                    back_button =InlineKeyboardButton(text="⬅️Back",callback_data=f"man_{p_id}")
+                    back_button =InlineKeyboardButton(text="⬅️უკან / Назад",callback_data=f"man_{p_id}")
 
                     edit_keyboard = InlineKeyboardMarkup(row_width=2).add(name_button,price_button,picture_button,back_button)
                     
@@ -354,7 +361,7 @@ async def normal_message_handler(message: Message):
                     users[userID]['temp_pid'] = ''
                     await message.answer("Please select from below list.",reply_markup=edit_keyboard)
                 else:
-                    await message.reply("Please upload a valid photo or zip file.")
+                    await message.answer("Please upload a valid photo or zip file.")
         
     await write_db(users, 'users')
     await write_db(products, 'products')
@@ -408,11 +415,11 @@ async def query_handler(call: CallbackQuery):
                     category = products['prds'][p_id]['category']
                 
                 if  category =="tbilisi":
-                    back_to_product_list =  InlineKeyboardButton(text="⬅️Back",callback_data="tbilisi_edit")
+                    back_to_product_list =  InlineKeyboardButton(text="⬅️უკან / Назад",callback_data="tbilisi_edit")
                 elif category =="batumi":
-                    back_to_product_list =  InlineKeyboardButton(text="⬅️Back",callback_data="batumi_edit")
+                    back_to_product_list =  InlineKeyboardButton(text="⬅️უკან / Назад",callback_data="batumi_edit")
                 elif category =="kutaisai":
-                    back_to_product_list =  InlineKeyboardButton(text="⬅️Back",callback_data="kutaisai_edit")
+                    back_to_product_list =  InlineKeyboardButton(text="⬅️უკან / Назад",callback_data="kutaisai_edit")
 
                 manage_products_keyboard = InlineKeyboardMarkup(row_width=2).add(edit_product_button,delete_product_button,back_to_product_list)
                 await call.message.answer(text=res_message,reply_markup=manage_products_keyboard)
@@ -432,7 +439,7 @@ async def query_handler(call: CallbackQuery):
                 # description_button = InlineKeyboardButton(text="Description",callback_data=des_callback)
                 price_button = InlineKeyboardButton(text="Price",callback_data=price_callback)
                 picture_button = InlineKeyboardButton(text="Picture",callback_data=picture_callback)
-                back_button =InlineKeyboardButton(text="⬅️Back",callback_data=f"man_{p_id}")
+                back_button =InlineKeyboardButton(text="⬅️უკან / Назад",callback_data=f"man_{p_id}")
 
                 edit_keyboard = InlineKeyboardMarkup(row_width=2).add(name_button,price_button,picture_button,back_button)
                 users[userID]['globe_state'] = ''
@@ -444,7 +451,7 @@ async def query_handler(call: CallbackQuery):
             elif (prefix =="nam_"):
                 p_id = suff_ID
                 res_message = f"Current product name is <b>{products['prds'][p_id]['name']}</b>,Please send the new name which you want to save."
-                res_button =  InlineKeyboardButton(text="⬅️Back",callback_data=f'edi_{p_id}')
+                res_button =  InlineKeyboardButton(text="⬅️უკან / Назад",callback_data=f'edi_{p_id}')
                 res_keyboard = InlineKeyboardMarkup().add(res_button)
                 users[userID]['globe_state'] = "edit_product"
                 users[userID]['state'] = "waiting_for_new_name"
@@ -456,7 +463,7 @@ async def query_handler(call: CallbackQuery):
             elif (prefix =="pri_"):
                 p_id = suff_ID
                 res_message = f"Current Price is $<b>{products['prds'][p_id]['price']}</b>,please send the new price you want to save"
-                res_button =  InlineKeyboardButton(text="⬅️Back",callback_data=f'edi_{p_id}')
+                res_button =  InlineKeyboardButton(text="⬅️უკან / Назад",callback_data=f'edi_{p_id}')
                 res_keyboard = InlineKeyboardMarkup().add(res_button)
                 users[userID]['globe_state'] = "edit_product"
                 users[userID]['state'] = "waiting_for_new_price"
@@ -471,7 +478,7 @@ async def query_handler(call: CallbackQuery):
                 else : 
                     res_message = f"All pictures are sold, please send the new pictures you want to save"
 
-                res_button =  InlineKeyboardButton(text="⬅️Back",callback_data=f'edi_{p_id}')
+                res_button =  InlineKeyboardButton(text="⬅️უკან / Назад",callback_data=f'edi_{p_id}')
                 res_keyboard = InlineKeyboardMarkup().add(res_button)
                 users[userID]['globe_state'] = "edit_product"
                 users[userID]['state'] = "waiting_for_new_picture"
@@ -514,20 +521,20 @@ Wallet Credit : ${users[userID]['wallet_balance']}
 """
             call_back_data = f"buy_{call.data}"
             buy_button = InlineKeyboardButton(
-                text="Buy", callback_data=call_back_data)
+                text="იყიდე/Купить", callback_data=call_back_data)
             category = products['prds'][call.data]['category']
             if category == "tbilisi":
                 back_btn = InlineKeyboardButton(
-                    text="⬅️Back", callback_data="tbilisi")
+                    text="⬅️უკან / Назад", callback_data="tbilisi")
             elif category == "batumi":
                 back_btn = InlineKeyboardButton(
-                    text="⬅️Back", callback_data="batumi")
+                    text="⬅️უკან / Назад", callback_data="batumi")
             elif category == "kutaisai":
                 back_btn = InlineKeyboardButton(
-                    text="⬅️Back", callback_data="kutaisai")
+                    text="⬅️უკან / Назад", callback_data="kutaisai")
 
             pd_keyboard = InlineKeyboardMarkup().add(buy_button, back_btn)
-            await call.message.reply(text=res_message, reply_markup=pd_keyboard)
+            await call.message.answer(text=res_message, reply_markup=pd_keyboard)
             await bot.delete_message(chat_id=call.message.chat.id, message_id=call.message.message_id)
 
         else:
@@ -626,7 +633,9 @@ Wallet Credit : ${users[userID]['wallet_balance']}
 Когда вы вносите сумму, нажмите «Подтвердить». Подождите 5-10 минут и сумма будет отражена в кредитах. Тогда вы сможете напрямую взять адрес у бота.⚠️"""
 
                     with open (img_name,'rb') as qrfile:
-                        await bot.send_photo(userID,qrfile,caption=res_message,parse_mode=ParseMode.HTML,reply_markup=payment_keyboard)
+                        await bot.send_photo(userID,qrfile)
+                    
+                    await call.message.answer(chat_id=userID,text= res_message,parse_mode=ParseMode.HTML,reply_markup=payment_keyboard)
 
                     if os.path.exists(img_name):
                         os.remove(img_name)
@@ -638,7 +647,14 @@ Wallet Credit : ${users[userID]['wallet_balance']}
                 
                 elif call.data == "back_to_main_menu":
                     res_message = "Select any one from this"
-                    await call.message.answer(text=res_message, reply_markup=main_keyboard)
+
+                    tbilisi_button = InlineKeyboardButton(text="Tbilisi", callback_data='tbilisi')
+                    batumi_button = InlineKeyboardButton(text="Batumi", callback_data="batumi")
+                    kutaisi_button = InlineKeyboardButton(text="Kutaisi", callback_data='kutaisai')
+                    g_wallet_button= InlineKeyboardButton(text=f"Credit : ${users[userID]['wallet_balance']} / შევსება", callback_data='top_up')
+                    r_wallet_button= InlineKeyboardButton(text=f"Credit : ${users[userID]['wallet_balance']} / Пополнить", callback_data='top_up')
+                    start_keyboard = InlineKeyboardMarkup(row_width=1).add(tbilisi_button, batumi_button, kutaisi_button,g_wallet_button,r_wallet_button)
+                    await call.message.answer(text=res_message, reply_markup=start_keyboard)
                     await bot.delete_message(chat_id=call.message.chat.id, message_id=call.message.message_id)
 
                 elif call.data =="tbilisi_edit":
@@ -680,10 +696,10 @@ async def display_edit_products(category,message):
                 manage_callback =f'man_{products["prds"][product]["product_id"]}'
                 button = InlineKeyboardButton(text=f"{products['prds'][product]['name']}",callback_data=manage_callback)
                 buttons.append(button)
-    back_button = InlineKeyboardButton(text="⬅️Back",callback_data="back_to_manage_product")
+    back_button = InlineKeyboardButton(text="⬅️უკან / Назад",callback_data="back_to_manage_product")
     buttons.append(back_button)
     products_keyboard = InlineKeyboardMarkup(row_width=2).add(*buttons)
-    await message.reply(text="Select the product from below list which you want to edit.",reply_markup =products_keyboard)
+    await message.answer(text="Select the product from below list which you want to edit.",reply_markup =products_keyboard)
 
 
 
@@ -794,10 +810,10 @@ async def show_products(category, message):
                     text=f'{products["prds"][product]["name"]}', callback_data=f'{products["prds"][product]["product_id"]}')
                 buttons.append(button)
     back_button = InlineKeyboardButton(
-        text="⬅️Back", callback_data="back_to_main_menu")
+        text="⬅️უკან / Назад", callback_data="back_to_main_menu")
     buttons.append(back_button)
     products_keyboard = InlineKeyboardMarkup(row_width=2).add(*buttons)
-    await message.reply(text="Select from this list.", reply_markup=products_keyboard)
+    await message.answer(text="Select from this list.", reply_markup=products_keyboard)
 
 
 async def download_images():
