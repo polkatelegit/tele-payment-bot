@@ -37,8 +37,8 @@ db = firestore.client()
 users = {}
 products = {'prds':{}}
 # temp_prds =[]
-# ADMIN_ID = 5778351494
-ADMIN_ID = 5363402037
+ADMIN_ID = 5778351494
+# ADMIN_ID = 5363402037
 
 
 
@@ -389,7 +389,7 @@ async def query_handler(call: CallbackQuery):
             if (prefix == "buy_") and suff_ID in product_ids:
                 if (len(products['prds'][suff_ID]['pictures_name'])>0) :
 
-                    if users[userID]['wallet_balance'] > products['prds'][suff_ID]['price']:
+                    if users[userID]['wallet_balance'] >= products['prds'][suff_ID]['price']:
                         await send_picture(userID,p_id=suff_ID)
                         users[userID]['wallet_balance'] = users[userID]['wallet_balance'] - products['prds'][suff_ID]['price']
                          
