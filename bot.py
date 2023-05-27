@@ -78,8 +78,8 @@ async def start_command(message: Message):
     tbilisi_button = InlineKeyboardButton(text="Tbilisi", callback_data='tbilisi')
     batumi_button = InlineKeyboardButton(text="Batumi", callback_data="batumi")
     kutaisi_button = InlineKeyboardButton(text="Kutaisi", callback_data='kutaisai')
-    g_wallet_button= InlineKeyboardButton(text=f"Credit : ${users[userID]['wallet_balance']} / შევსება", callback_data='top_up')
-    r_wallet_button= InlineKeyboardButton(text=f"Credit : ${users[userID]['wallet_balance']} / Пополнить", callback_data='top_up')
+    g_wallet_button= InlineKeyboardButton(text=f"Credit : ${users[userID]['wallet_balance']} / შევსება", callback_data='gtop_up')
+    r_wallet_button= InlineKeyboardButton(text=f"Credit : ${users[userID]['wallet_balance']} / Пополнить", callback_data='rtop_up')
     start_keyboard = InlineKeyboardMarkup(row_width=1).add(tbilisi_button, batumi_button, kutaisi_button,g_wallet_button,r_wallet_button)
 
     await message.answer("🖐️გამარჯობა / Привет",reply_markup=start_keyboard)
@@ -99,8 +99,8 @@ async def showproducts(message: Message):
     tbilisi_button = InlineKeyboardButton(text="Tbilisi", callback_data='tbilisi')
     batumi_button = InlineKeyboardButton(text="Batumi", callback_data="batumi")
     kutaisi_button = InlineKeyboardButton(text="Kutaisi", callback_data='kutaisai')
-    g_wallet_button= InlineKeyboardButton(text=f"Credit : ${users[userID]['wallet_balance']} / შევსება", callback_data='top_up')
-    r_wallet_button= InlineKeyboardButton(text=f"Credit : ${users[userID]['wallet_balance']} / Пополнить", callback_data='top_up')
+    g_wallet_button= InlineKeyboardButton(text=f"Credit : ${users[userID]['wallet_balance']} / შევსება", callback_data='gtop_up')
+    r_wallet_button= InlineKeyboardButton(text=f"Credit : ${users[userID]['wallet_balance']} / Пополнить", callback_data='rtop_up')
     start_keyboard = InlineKeyboardMarkup(row_width=1).add(tbilisi_button, batumi_button, kutaisi_button,g_wallet_button,r_wallet_button)
     await message.answer(text=res_message, reply_markup=start_keyboard)
 
@@ -392,11 +392,15 @@ async def query_handler(call: CallbackQuery):
                         users[userID]['wallet_balance'] = users[userID]['wallet_balance'] - products['prds'][suff_ID]['price']
                          
                     else:
-                        await call.message.answer("You do not have enough balance in wallet, please use /start command and top up your wallet.")
+                        res_message = """შენ არ გაქ საკმარისი თანხა ბალანსზე. დააჭირე "/start" ს რომ შეავსო ბალანსი.
+У вас недостаточно денег на балансе. Нажмите «/start», чтобы пополнить баланс.
+                        """
+                        await call.message.answer(res_message)
 
               
                 else:
-                    res_message = "It is out of stock now.Please check after some time"
+                    res_message = """ამჟამად არ არის მარაგში. გთხოვთ, გადაამოწმოთ გარკვეული დროის შემდეგ.
+Сейчас его нет в наличии. Пожалуйста, проверьте через некоторое время"""
                     await call.message.answer(text=res_message)
 
 
@@ -588,7 +592,7 @@ Wallet Credit : ${users[userID]['wallet_balance']}
                 #     await call.message.answer(text=res_message,reply_markup=topup_keyboard,parse_mode=ParseMode.HTML)
 
                 #     await write_db(payments_data,'payments_data')
-                elif call.data == "top_up":
+                elif call.data == "gtop_up":
 
                     res_dict = await create_charge_for_topup(amount=45,userID=userID)
 
@@ -611,22 +615,60 @@ Wallet Credit : ${users[userID]['wallet_balance']}
                     coin_80_amount = round(float(81/ltc_rate),4)
                     coin_160_amount = round(float(161/ltc_rate),4)
 
-                    res_message = f"""გადახდის დეტალები / Детали оплаты
+                    res_message = f"""გადახდის დეტალები
 <code>{coin_45_amount}</code> Litecoin = <b>$45</b>credit
 <code>{coin_80_amount}</code> Litecoin = <b>$80</b>credit
 <code>{coin_160_amount}</code> Litecoin = <b>$160</b>credit
 
 <b>Address</b>: <code>{res_dict['receiving_address']}</code>
 
-შეგიძლია გამოაგზავნო ნებისმიერი ოდენობის თანხა / Вы можете отправить любую сумму денег
+შეგიძლია გამოაგზავნო ნებისმიერი ოდენობის თანხა
                 
 ⚠️1 საათში კოდს დრო გაუვა. დააჭირე "შევსება"-ს თავიდან. ბოტი მოგცემს ახალ კოდს. შეეცადე ისე ქნა, რომ ახალი კოდის მოცემისთანავე ჩარიცხო თანხა!
 
 ერთ კოდზე გამოაგზავნე ერთხელ. თუ თანხა დაგაკლდა თავიდან შეავსე ბალანსი.    იგივე კოდზე სადაც უკვე ჩარიცხულიგაქ არ ჩარიცხო!
 
-როცა ჩარიცხავ თანხას დააჭირე "დადასტურება"-ს. დაელოდე 5 - 10 წუთი და თანხა აისახება კრედიტებით. შემდეგ პირდაპირ შეძლებ ბოტისგან მისამართის აღებას.
+როცა ჩარიცხავ თანხას დააჭირე "დადასტურება"-ს. დაელოდე 5 - 10 წუთი და თანხა აისახება კრედიტებით. შემდეგ პირდაპირ შეძლებ ბოტისგან მისამართის აღებას.⚠️"""
 
-Срок действия кода истекает через 1 час. Нажмите «Заполнить» еще раз. Бот выдаст вам новый код. Попробуйте внести депозит, как только будет предоставлен новый код!
+                    with open (img_name,'rb') as qrfile:
+                        await bot.send_photo(userID,qrfile)
+                    await call.message.answer(text= res_message,parse_mode=ParseMode.HTML,reply_markup=payment_keyboard)
+                    if os.path.exists(img_name):
+                        os.remove(img_name)
+
+                elif call.data == "rtop_up":
+
+                    res_dict = await create_charge_for_topup(amount=45,userID=userID)
+
+                    qr = qrcode.QRCode(
+                        version=1, error_correction=qrcode.constants.ERROR_CORRECT_H, box_size=10, border=4
+                    )
+                    qr_data = res_dict['receiving_address']
+                    qr.add_data(qr_data)
+                    qr.make(fit=True)
+
+                    img = qr.make_image(fill_color="black", back_color="white")
+                    img_name = f"{res_dict['receiving_address']}_qr.png"
+                    img.save(img_name)
+
+                    payment_confirm_button = InlineKeyboardButton(text="✔️დადასტურება/Подтвердить",callback_data="payment_done")
+                    payment_keyboard = InlineKeyboardMarkup().add(payment_confirm_button)
+
+                    ltc_rate = float(res_dict['litecoin_rate'])
+                    coin_45_amount = round(float(46/ltc_rate),4)
+                    coin_80_amount = round(float(81/ltc_rate),4)
+                    coin_160_amount = round(float(161/ltc_rate),4)
+
+                    res_message = f""" Детали оплаты
+<code>{coin_45_amount}</code> Litecoin = <b>$45</b>credit
+<code>{coin_80_amount}</code> Litecoin = <b>$80</b>credit
+<code>{coin_160_amount}</code> Litecoin = <b>$160</b>credit
+
+<b>Address</b>: <code>{res_dict['receiving_address']}</code>
+
+Вы можете отправить любую сумму денег
+                
+⚠️Срок действия кода истекает через 1 час. Нажмите «Заполнить» еще раз. Бот выдаст вам новый код. Попробуйте внести депозит, как только будет предоставлен новый код!
 
 Внесите сумму один раз за код. Если суммы недостаточно, пополните баланс еще раз. Не вносите деньги на тот же код, на который вы уже вносили депозит!
 
@@ -637,6 +679,7 @@ Wallet Credit : ${users[userID]['wallet_balance']}
                     await call.message.answer(text= res_message,parse_mode=ParseMode.HTML,reply_markup=payment_keyboard)
                     if os.path.exists(img_name):
                         os.remove(img_name)
+
 
                 elif call.data == "payment_done":
                     res_message = """
@@ -653,8 +696,8 @@ Wallet Credit : ${users[userID]['wallet_balance']}
                     tbilisi_button = InlineKeyboardButton(text="Tbilisi", callback_data='tbilisi')
                     batumi_button = InlineKeyboardButton(text="Batumi", callback_data="batumi")
                     kutaisi_button = InlineKeyboardButton(text="Kutaisi", callback_data='kutaisai')
-                    g_wallet_button= InlineKeyboardButton(text=f"Credit : ${users[userID]['wallet_balance']} / შევსება", callback_data='top_up')
-                    r_wallet_button= InlineKeyboardButton(text=f"Credit : ${users[userID]['wallet_balance']} / Пополнить", callback_data='top_up')
+                    g_wallet_button= InlineKeyboardButton(text=f"Credit : ${users[userID]['wallet_balance']} / შევსება", callback_data='gtop_up')
+                    r_wallet_button= InlineKeyboardButton(text=f"Credit : ${users[userID]['wallet_balance']} / Пополнить", callback_data='rtop_up')
                     start_keyboard = InlineKeyboardMarkup(row_width=1).add(tbilisi_button, batumi_button, kutaisi_button,g_wallet_button,r_wallet_button)
                     await call.message.answer(text=res_message, reply_markup=start_keyboard)
                     await bot.delete_message(chat_id=call.message.chat.id, message_id=call.message.message_id)
