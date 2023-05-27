@@ -96,7 +96,7 @@ async def showproducts(message: Message):
     users[userID]['globe_state'] = ''
     users[userID]['state'] = ''
     users[userID]['temp_pid'] = ''
-    res_message = "⬇️⬇️⬇️"
+    res_message = "⬇️⬇️⬇️⬇️⬇️"
 
     tbilisi_button = InlineKeyboardButton(text="Tbilisi", callback_data='tbilisi')
     batumi_button = InlineKeyboardButton(text="Batumi", callback_data="batumi")
@@ -694,7 +694,7 @@ Wallet Credit : ${users[userID]['wallet_balance']}
                     await bot.edit_message_reply_markup(chat_id=userID,message_id=call.message.message_id,reply_markup=None)
                 
                 elif call.data == "back_to_main_menu":
-                    res_message = "⬇️⬇️⬇️"
+                    res_message = "⬇️⬇️⬇️⬇️⬇️"
 
                     tbilisi_button = InlineKeyboardButton(text="Tbilisi", callback_data='tbilisi')
                     batumi_button = InlineKeyboardButton(text="Batumi", callback_data="batumi")
@@ -861,7 +861,7 @@ async def show_products(category, message):
         text="⬅️უკან / Назад", callback_data="back_to_main_menu")
     buttons.append(back_button)
     products_keyboard = InlineKeyboardMarkup(row_width=1).add(*buttons)
-    await message.answer(text="⬇️⬇️⬇️", reply_markup=products_keyboard)
+    await message.answer(text="⬇️⬇️⬇️⬇️⬇️", reply_markup=products_keyboard)
 
 
 async def download_images():
