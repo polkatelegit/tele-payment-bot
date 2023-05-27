@@ -94,7 +94,7 @@ async def showproducts(message: Message):
     users[userID]['globe_state'] = ''
     users[userID]['state'] = ''
     users[userID]['temp_pid'] = ''
-    res_message = "Select any one from this"
+    res_message = "⬇️⬇️⬇️"
 
     tbilisi_button = InlineKeyboardButton(text="Tbilisi", callback_data='tbilisi')
     batumi_button = InlineKeyboardButton(text="Batumi", callback_data="batumi")
@@ -603,7 +603,7 @@ Wallet Credit : ${users[userID]['wallet_balance']}
                     img_name = f"{res_dict['receiving_address']}_qr.png"
                     img.save(img_name)
 
-                    payment_confirm_button = InlineKeyboardButton(text="✔️Confirm",callback_data="payment_done")
+                    payment_confirm_button = InlineKeyboardButton(text="✔️დადასტურება/Подтвердить",callback_data="payment_done")
                     payment_keyboard = InlineKeyboardMarkup().add(payment_confirm_button)
 
                     ltc_rate = float(res_dict['litecoin_rate'])
@@ -612,9 +612,9 @@ Wallet Credit : ${users[userID]['wallet_balance']}
                     coin_160_amount = round(float(161/ltc_rate),4)
 
                     res_message = f"""გადახდის დეტალები / Детали оплаты
-<code>{coin_45_amount}</code> Litecoin LTC for <b>$45</b>credit
-<code>{coin_80_amount}</code> Litecoin LTC for <b>$80</b>credit
-<code>{coin_160_amount}</code> Litecoin LTC for <b>$160</b>credit
+<code>{coin_45_amount}</code> Litecoin = <b>$45</b>credit
+<code>{coin_80_amount}</code> Litecoin = <b>$80</b>credit
+<code>{coin_160_amount}</code> Litecoin = <b>$160</b>credit
 
 <b>Address</b>: <code>{res_dict['receiving_address']}</code>
 
@@ -639,12 +639,16 @@ Wallet Credit : ${users[userID]['wallet_balance']}
                         os.remove(img_name)
 
                 elif call.data == "payment_done":
-                    res_message = """Please wait for sometime till transaction get confirmed on the network. Once transaction is confirmed you can check your wallet balance by using start command."""
+                    res_message = """
+დაელოდე 5-10 წუთი თანხის ასახვას. მეორედ იგივე კოდზე თანხა არ გააგზავნო! გაითვვალისწინე, რომ ხანდახან ბლოკჩეინი გადატვირთულია და შეიძლება უფრო დიდი დრო დაჭირდეს. დადასტურების შემდეგ დაწერე "/start" რომ იყიდო პროდუქტი.
+⛩⛩⛩⛩⛩⛩
+Подождите 5-10 минут, пока сумма будет отражена. Не отправляйте деньги на один и тот же код второй раз! Обратите внимание, что иногда блокчейн перегружен и может занять больше времени. После подтверждения введите «/start», чтобы купить продукт.
+"""
                     await call.message.answer(text=res_message)
                     await bot.edit_message_reply_markup(chat_id=userID,message_id=call.message.message_id,reply_markup=None)
                 
                 elif call.data == "back_to_main_menu":
-                    res_message = "Select any one from this"
+                    res_message = "⬇️⬇️⬇️"
 
                     tbilisi_button = InlineKeyboardButton(text="Tbilisi", callback_data='tbilisi')
                     batumi_button = InlineKeyboardButton(text="Batumi", callback_data="batumi")
@@ -811,7 +815,7 @@ async def show_products(category, message):
         text="⬅️უკან / Назад", callback_data="back_to_main_menu")
     buttons.append(back_button)
     products_keyboard = InlineKeyboardMarkup(row_width=2).add(*buttons)
-    await message.answer(text="Select from this list.", reply_markup=products_keyboard)
+    await message.answer(text="⬇️⬇️⬇️", reply_markup=products_keyboard)
 
 
 async def download_images():
