@@ -399,8 +399,9 @@ async def query_handler(call: CallbackQuery):
 
               
                 else:
-                    res_message = """ამჟამად არ არის მარაგში. გთხოვთ, გადაამოწმოთ გარკვეული დროის შემდეგ.
-Сейчас его нет в наличии. Пожалуйста, проверьте через некоторое время"""
+                    res_message = """გაყიდულია! შეამოწმე ცოტახანში.
+Продано! Заходите позже.
+"""
                     await call.message.answer(text=res_message)
 
 
