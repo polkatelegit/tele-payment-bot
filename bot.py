@@ -80,7 +80,7 @@ async def start_command(message: Message):
     kutaisi_button = InlineKeyboardButton(text="Kutaisi", callback_data='kutaisai')
     g_wallet_button= InlineKeyboardButton(text=f"Credit : ${users[userID]['wallet_balance']} / შევსება", callback_data='top_up')
     # r_wallet_button= InlineKeyboardButton(text=f"Credit : ${users[userID]['wallet_balance']} / Пополнить", callback_data='top_up')
-    start_keyboard = InlineKeyboardMarkup(row_width=1).add(tbilisi_button, batumi_button, kutaisi_button,g_wallet_button,r_wallet_button)
+    start_keyboard = InlineKeyboardMarkup(row_width=1).add(tbilisi_button, batumi_button, kutaisi_button,g_wallet_button)
 
     await message.reply("🖐️გამარჯობა / Привет",reply_markup=start_keyboard)
     await write_db(users, 'users')
