@@ -16,7 +16,8 @@ from firebase_admin import storage
 import aioschedule
 
 
-API_TOKEN = '5639332006:AAGOolvXWUaJnJpVOf1QBrrj0PRn0hiRGgQ'
+# API_TOKEN = '5639332006:AAGOolvXWUaJnJpVOf1QBrrj0PRn0hiRGgQ'
+API_TOKEN = '6097537327:AAESkUj35YLV8zvrd20UwMCK8YLbgV1UYvM'
 COINBASE_API = '0c127e3d-75af-4631-b42e-63f3f01e0a12'
 
 bot = aiogram.Bot(API_TOKEN)
