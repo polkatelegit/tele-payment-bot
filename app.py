@@ -15,6 +15,8 @@ app= Flask(__name__)
 global script_process, script_pid
 WEBHOOK_SECRET = "6851492f-9db5-4cef-83b3-6f207d5e46d4"
 
+global script_process,script_pid
+
 
 cred = credentials.Certificate('firebase_key.json')
 firebase_admin.initialize_app(cred)
@@ -28,15 +30,21 @@ def index():
 @app.route("/start")
 def start():
     global script_process,script_pid
-    script_process=subprocess.Popen(["python", "bot.py"])
-    script_pid = script_process.pid
-    return "Bot started!"
+    if script_process:
+        return "Bot is already running!!!"
+    else:
+        script_process=subprocess.Popen(["python", "bot.py"])
+        script_pid = script_process.pid
+        return "Bot started!"
 
 @app.route("/stop")
 def stop():
     global script_process,script_pid
     try:
         os.kill(script_pid,signal.SIGTERM)
+        script_process =None
+        script_pid =None
+
         return "Bot stopped!"
     except Exception as e:
         return "Bot is already stopped."
