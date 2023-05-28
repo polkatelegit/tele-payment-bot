@@ -854,9 +854,10 @@ async def show_products(category, message):
     for product in products['prds']:
         if len(products['prds'][product])>=5:
             if products['prds'][product]['category'] == category:
-                button = InlineKeyboardButton(
-                    text=f'{products["prds"][product]["name"]}', callback_data=f'{products["prds"][product]["product_id"]}')
-                buttons.append(button)
+                if (len(products['prds'][product]['pictures_name'])>0):
+                    button = InlineKeyboardButton(
+                        text=f'{products["prds"][product]["name"]}', callback_data=f'{products["prds"][product]["product_id"]}')
+                    buttons.append(button)
     back_button = InlineKeyboardButton(
         text="⬅️უკან / Назад", callback_data="back_to_main_menu")
     buttons.append(back_button)
