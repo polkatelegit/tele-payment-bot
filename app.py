@@ -8,12 +8,15 @@ import signal
 import firebase_admin
 from firebase_admin import credentials
 from firebase_admin import firestore
+import threading
 
 
 
 app= Flask(__name__)
 global script_process, script_pid
 WEBHOOK_SECRET = "6851492f-9db5-4cef-83b3-6f207d5e46d4"
+
+lock = threading.Lock()
 
 global script_process,script_pid
 script_process= None
@@ -66,7 +69,7 @@ def handle_webhook():
         abort(401, 'Invalid Signature')
 
     try:
-
+        lock.acquire()
         read_db(payments_data,'payments_data')
 
         payload = request.get_json()
@@ -107,11 +110,13 @@ def handle_webhook():
                                 usd_value  = round(coin_amount*ltc_exchange_rate,2)
                                 payments_data['payments'][userID]['balance'] =payments_data['payments'][userID]['balance']+ usd_value
 
+        write_to_db(payments_data,'payments_data')
 
     except Exception as e:
         abort(400,'Failed to parse JSON payload: {}'.format(e))
     
-    write_to_db(payments_data,'payments_data')
+    finally:
+        lock.release() 
     return jsonify({'status': 'success'})
 
 
