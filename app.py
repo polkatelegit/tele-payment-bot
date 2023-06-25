@@ -13,7 +13,7 @@ import threading
 
 
 app= Flask(__name__)
-global script_process, script_pid
+# global script_process, script_pid
 WEBHOOK_SECRET = "6851492f-9db5-4cef-83b3-6f207d5e46d4"
 
 lock = threading.Lock()
