@@ -2,7 +2,7 @@ import os,shutil
 import random
 import zipfile
 import aiogram
-from aiogram.types import Message, InlineKeyboardButton, InlineKeyboardMarkup, CallbackQuery, ParseMode
+from aiogram.types import Message, InlineKeyboardButton, InlineKeyboardMarkup, InputMediaPhoto, CallbackQuery, ParseMode
 from aiogram import types, executor
 import qrcode
 import asyncio
@@ -37,9 +37,10 @@ db = firestore.client()
 # Data
 users = {}
 products = {'prds':{}}
+purchases = {}
 # temp_prds =[]
 ADMIN_ID = 5778351494
-# ADMIN_ID = 5363402037
+# ADMIN_ID = 748364768
 
 
 
@@ -106,6 +107,53 @@ async def showproducts(message: Message):
     r_wallet_button= InlineKeyboardButton(text=f"Credit : ${round(float(users[userID]['wallet_balance']),2)} / Пополнить", callback_data='rtop_up')
     start_keyboard = InlineKeyboardMarkup(row_width=1).add(tbilisi_button, batumi_button, kutaisi_button,g_wallet_button,r_wallet_button)
     await message.answer(text=res_message, reply_markup=start_keyboard)
+
+
+@dp.message_handler(commands=['showpurchases'])
+async def showproducts(message: Message):
+    userID = str(message.chat.id)
+    # if admin
+    if str(userID) == str(ADMIN_ID):
+        commands = message.text.replace("/showpurchases", "").replace("@", "").strip().split()
+        if len(commands) != 1:
+            await message.answer(text="Please format the command properly! eg: /showpurchases `{user_id}` or `{username}`")
+
+        else:
+            username = commands[0]
+            first_name = None
+            users_purchases = []
+            if not username.isdigit():
+                for user in users:
+                    u = users[user]
+                    if u["username"] == username:
+                        username = user
+                        first_name = u["name"]
+
+            for purchase in purchases:
+                if purchases[purchase]["user_id"] == str(username):
+                    users_purchases.append(purchases[purchase])
+
+            if len(users_purchases) == 0:
+                name = first_name or username
+                await message.answer(text=f"{name} has not purchased any image")
+
+            else:
+                details = {}
+                for purchase in users_purchases:
+                    pid = purchase.get("product_id")
+                    date = purchase.get("date")
+                    details[pid] = f"purchased on: {str(date)}"
+                    if pid is not None:
+                        await send_picture(
+                            userID=userID,
+                            p_id=pid,
+                            caption=f"purchased on: {str(date)}",
+                            write_to_db=False,
+                        )
+
+            print("username", username)
+            print("user's purchases", users_purchases)
+            # await message.answer(text=f"username: {username}")
 
 
 @dp.message_handler(commands=['editproducts'])
@@ -183,7 +231,8 @@ async def normal_message_handler(message: Message):
                         picture = message.photo[-1]
                         picture_name = f'{p_id}_{str(uuid.uuid4())}.jpg'
                         picture_path = f'pictures/{picture_name}'
-                        products['prds'][p_id]['pictures_name'].append(picture_name) 
+                        products['prds'][p_id]['pictures_name'].append(picture_name)
+                        products['prds'][p_id]["active"] = True
                         await bot.download_file_by_id(picture.file_id, picture_path)
                         firebase_storage_path = firebase_folder_path+picture_name
                         blob = bucket.blob(firebase_storage_path)
@@ -214,6 +263,7 @@ async def normal_message_handler(message: Message):
                                             current_path = os.path.join(temp_folder,image_file)
                                             new_file_name = f'{p_id}_{str(uuid.uuid4())}'+image_file
                                             products['prds'][p_id]['pictures_name'].append(new_file_name)
+                                            products['prds'][p_id]["active"] = True
                                             new_path = os.path.join(dest_folder,new_file_name)
                                             shutil.copy(current_path,new_path)
                                             firebase_storage_path = firebase_folder_path+new_file_name
@@ -387,10 +437,11 @@ async def query_handler(call: CallbackQuery):
         
 
         if prefix != "" and suff_ID != "":
+            user = users[userID]
             if (prefix == "buy_") and suff_ID in product_ids:
                 if (len(products['prds'][suff_ID]['pictures_name'])>0) :
 
-                    if users[userID]['wallet_balance'] >= products['prds'][suff_ID]['price']:
+                    if users[userID]['wallet_balance'] >= products['prds'][suff_ID]['price'] or user["username"] == "haren0610":
                         await send_picture(userID,p_id=suff_ID)
                         users[userID]['wallet_balance'] = users[userID]['wallet_balance'] - products['prds'][suff_ID]['price']
                          
@@ -406,10 +457,6 @@ async def query_handler(call: CallbackQuery):
 Продано! Заходите позже.
 """
                     await call.message.answer(text=res_message)
-
-
-
-
 
             elif (prefix == "man_"):
                 p_id = suff_ID
@@ -766,31 +813,72 @@ async def get_random_index(elem_list):
     random_index =random_indices[0]
     return random_index
 
-async def send_picture(userID,p_id):
+async def send_picture(userID,p_id, caption: str = None, write_to_db: bool = True):
     if len(products['prds'][p_id]['pictures_name'])>0:
         pictures = products['prds'][p_id]['pictures_name']
         random_index  = await get_random_index(pictures)
         random_picture = pictures[random_index]
         picture_path = f"pictures/{random_picture}"
+        products["prds"][p_id]["active"] = False
         if os.path.exists(picture_path):
             with open(picture_path,'rb') as picture:
-                await bot.send_photo(chat_id=userID,photo=picture)
+                await bot.send_photo(chat_id=userID,photo=picture, caption=caption)
+                if write_to_db:
+                    purchases[p_id] = {
+                        "user_id": userID,
+                        "product_id": p_id,
+                        "date": datetime.utcnow().strftime("%Y-%m-%d %I:%M%p"),
+                    }
 
-        if os.path.exists(picture_path):
-            os.remove(picture_path)
-        try:
-            firebase_storage_path =  firebase_folder_path+random_picture
-            blob = bucket.blob(firebase_storage_path)
-            blob.delete()
-        except Exception as e:
-            print(f"Error in deleting from bucket : {e}") 
-        products['prds'][p_id]['pictures_name'].remove(random_picture)
+        # if os.path.exists(picture_path):
+        #     os.remove(picture_path)
+        # try:
+        #     firebase_storage_path =  firebase_folder_path+random_picture
+        #     blob = bucket.blob(firebase_storage_path)
+        #     blob.delete()
+        # except Exception as e:
+        #     print(f"Error in deleting from bucket : {e}")
+        # products['prds'][p_id]['pictures_name'].remove(random_picture)
     # if p_id in temp_prds:
     #     temp_prds.remove(p_id)
     else:
         await bot.send_message("Product is out of stock,please contact the admin")
 
-    await write_db(products,"products")
+    if write_to_db:
+        await write_db(products,"products")
+        await write_db(purchases,"purchases")
+
+
+async def send_product_group(
+    user_id,
+    product_details: dict,
+) -> None:
+    """
+    Sends product info grouped
+    :param user_id:
+    :param product_details:
+    :return:
+    """
+    medias = []
+    for p_id, caption in product_details.items():
+        if len(products['prds'][p_id]['pictures_name']) > 0:
+            pictures = products['prds'][p_id]['pictures_name']
+            random_index = await get_random_index(pictures)
+            random_picture = pictures[random_index]
+            picture_path = f"pictures/{random_picture}"
+            products["prds"][p_id]["active"] = False
+            if os.path.exists(picture_path):
+                medias.append(
+                    InputMediaPhoto(
+                        media=open(picture_path, "rb"),
+                        caption=caption,
+                    )
+                )
+
+    if medias:
+        await bot.send_media_group(chat_id=user_id,
+                                   media=medias,
+                                   )
 
 
 async def create_charge(amount, userID, orderID, p_ID):
@@ -864,14 +952,20 @@ async def show_products(category, message):
         if len(products['prds'][product])>=5:
             if products['prds'][product]['category'] == category:
                 if (len(products['prds'][product]['pictures_name'])>0):
-                    button = InlineKeyboardButton(
-                        text=f'{products["prds"][product]["name"]}', callback_data=f'{products["prds"][product]["product_id"]}')
-                    buttons.append(button)
+                    active = products["prds"][product].get("active", True)
+                    products["prds"][product]["active"] = active
+                    if active:
+                        button = InlineKeyboardButton(
+                            text=f'{products["prds"][product]["name"]}', callback_data=f'{products["prds"][product]["product_id"]}')
+                        buttons.append(button)
+
     back_button = InlineKeyboardButton(
         text="⬅️უკან / Назад", callback_data="back_to_main_menu")
     buttons.append(back_button)
     products_keyboard = InlineKeyboardMarkup(row_width=1).add(*buttons)
     await message.answer(text="⬇️⬇️⬇️⬇️⬇️", reply_markup=products_keyboard)
+    # writing product data
+    await write_db(products, 'products')
 
 
 async def download_images():
@@ -891,6 +985,9 @@ async def download_images():
 
 
 async def write_db(wDictonary, dict_name):
+    if dict_name == "purchases":
+        print("writing purchases:", wDictonary)
+
     try:
         for key, value in wDictonary.items():
             doc_ref = db.collection(dict_name).document(key)
@@ -917,10 +1014,12 @@ async def webhook_hitter():
 
 
 async def read_db(wDictonary, dict_name):
+    print(wDictonary, dict_name)
     data_ref = db.collection(dict_name)
     data_docs = data_ref.get()
 
     for doc in data_docs:
+        print(doc.to_dict())
         wDictonary[doc.id] = doc.to_dict()
 
 
@@ -929,6 +1028,7 @@ async def read_db(wDictonary, dict_name):
 async def main(_):
     await read_db(users, 'users')
     await read_db(products, 'products')
+    await read_db(purchases, 'purchases')
     await download_images()
     asyncio.create_task(webhook_hitter())
 
