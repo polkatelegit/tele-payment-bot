@@ -1,3 +1,7 @@
+pip install firebase-admin
+
+import firebase_admin
+from firebase_admin import credentials, firestore
 from flask import Flask,request,jsonify,abort,render_template
 import hashlib
 import json
@@ -26,7 +30,8 @@ script_pid =None
 cred = credentials.Certificate('firebase_key.json')
 firebase_admin.initialize_app(cred)
 db = firestore.client()
-                              
+
+
 
 @app.route('/')
 def index():
